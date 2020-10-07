@@ -1,0 +1,182 @@
+-- //////////////////////////////////////////////////////////////
+-- // DATA BASE:		DATA_02
+-- // MODULE:			INVENTARIO_LOCACION
+-- // OPERATION:		TABLE
+-- //////////////////////////////////////////////////////////////
+-- // AUTHOR:			AX DE LA ROSA
+-- // CREATION DATE:	20201003
+-- ////////////////////////////////////////////////////////////// 
+
+USE [DATA_02Pruebas]
+GO
+
+-- //////////////////////////////////////////////////////////////
+-- //////////////////////////////////////////////////////////////
+-- // DROPs
+-- //////////////////////////////////////////////////////////////
+
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENTARIO_MOVIMIENTO]') AND type in (N'U'))
+	DROP TABLE [dbo].[INVENTARIO_MOVIMIENTO]
+GO
+
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENTARIO_LOCACION]') AND type in (N'U'))
+	DROP TABLE [dbo].[INVENTARIO_LOCACION]
+GO
+
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENTARIO_MOVIMIENTO_TIPO]') AND type in (N'U'))
+	DROP TABLE [dbo].[INVENTARIO_MOVIMIENTO_TIPO]
+GO
+
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENTARIO_MAX_MIN_LOCACION]') AND type in (N'U'))
+	DROP TABLE [dbo].[INVENTARIO_MAX_MIN_LOCACION]
+GO
+
+-- ////////////////////////////////////////////////////////////////
+-- //					INVENTARIO_MAX_MIN_LOCACION
+-- ////////////////////////////////////////////////////////////////
+
+CREATE TABLE [dbo].[INVENTARIO_MAX_MIN_LOCACION] (
+	[K_INVENTARIO_MAX_MIN_LOCACION]		[INT] IDENTITY (1,1)	NOT NULL,
+	-- ============================
+	[K_ITEM]							[INT] NOT NULL,
+	[K_LOCACION]						[INT] NOT NULL,
+	[CANTIDAD_MAXIMA]					[DECIMAL] (19,4) NOT NULL,
+	[CANTIDAD_MINIMA]					[DECIMAL] (19,4) NOT NULL
+	-- ============================
+) ON [PRIMARY]
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_MAX_MIN_LOCACION]
+	ADD CONSTRAINT [PK_INVENTARIO_MAX_MIN_LOCACION]
+		PRIMARY KEY CLUSTERED ([K_INVENTARIO_MAX_MIN_LOCACION])	
+GO
+
+
+
+-- ////////////////////////////////////////////////////////////////
+-- //					INVENTARIO_MOVIMIENTO_TIPO
+-- ////////////////////////////////////////////////////////////////
+
+CREATE TABLE [dbo].[INVENTARIO_MOVIMIENTO_TIPO] (
+	[K_INVENTARIO_MOVIMIENTO_TIPO]		[INT] NOT NULL,
+	-- ============================
+	[D_INVENTARIO_MOVIMIENTO_TIPO]		[VARCHAR] (100)	NOT NULL,
+	[S_INVENTARIO_MOVIMIENTO_TIPO]		[VARCHAR] (10)	NOT NULL,
+	[C_INVENTARIO_MOVIMIENTO_TIPO]		[VARCHAR] (500)	NOT NULL DEFAULT '',
+	[O_INVENTARIO_MOVIMIENTO_TIPO]		[INT] NOT NULL DEFAULT 10,
+	[L_INVENTARIO_MOVIMIENTO_TIPO]		[INT] NOT NULL DEFAULT 1
+	-- ============================
+) ON [PRIMARY]
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO_TIPO]
+	ADD CONSTRAINT [PK_INVENTARIO_MOVIMIENTO_TIPO]
+		PRIMARY KEY CLUSTERED ([K_INVENTARIO_MOVIMIENTO_TIPO])	
+GO
+
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO]') AND type in (N'P', N'PC'))
+	DROP PROCEDURE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO]
+GO
+
+-- //////////////////////////////////////////////////////////////
+-- //				CI - INVENTARIO_MOVIMIENTO_TIPO
+-- //////////////////////////////////////////////////////////////
+
+CREATE PROCEDURE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO]
+	@PP_K_SISTEMA_EXE					INT,
+	@PP_K_USUARIO_ACCION				INT,
+	-- ===========================
+	@PP_K_INVENTARIO_MOVIMIENTO_TIPO				INT,
+	@PP_D_INVENTARIO_MOVIMIENTO_TIPO				VARCHAR(100),
+	@PP_S_INVENTARIO_MOVIMIENTO_TIPO				VARCHAR(10),
+	@PP_C_INVENTARIO_MOVIMIENTO_TIPO				VARCHAR(500),
+	@PP_O_INVENTARIO_MOVIMIENTO_TIPO				INT,
+	@PP_L_INVENTARIO_MOVIMIENTO_TIPO				INT
+AS				
+	-- ===========================
+	INSERT INTO INVENTARIO_MOVIMIENTO_TIPO
+			(	[K_INVENTARIO_MOVIMIENTO_TIPO], [D_INVENTARIO_MOVIMIENTO_TIPO], 
+				[C_INVENTARIO_MOVIMIENTO_TIPO], [S_INVENTARIO_MOVIMIENTO_TIPO], 
+				[O_INVENTARIO_MOVIMIENTO_TIPO], [L_INVENTARIO_MOVIMIENTO_TIPO]		)
+	VALUES	
+			(	@PP_K_INVENTARIO_MOVIMIENTO_TIPO, @PP_D_INVENTARIO_MOVIMIENTO_TIPO, 
+				@PP_C_INVENTARIO_MOVIMIENTO_TIPO, @PP_S_INVENTARIO_MOVIMIENTO_TIPO,
+				@PP_O_INVENTARIO_MOVIMIENTO_TIPO, @PP_L_INVENTARIO_MOVIMIENTO_TIPO	 )
+GO
+
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,00, 'SALIDA',	 'SLIDA', '',	00,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,10, 'ENTRADA',	 'ENTRA', '',	10,1
+-- =================================================================================
+GO
+
+-- ////////////////////////////////////////////////////////////////
+-- //					INVENTARIO_LOCACION		 
+-- ////////////////////////////////////////////////////////////////
+
+CREATE TABLE [dbo].[INVENTARIO_LOCACION] (
+	[K_INVENTARIO_LOCACION]				[INT] IDENTITY (1,1)	NOT NULL,
+	-- ============================
+	[K_LOCACION]						[INT] NOT NULL,
+	[K_ITEM]							[INT] NOT NULL,
+	-- ============================
+	[LOTE_PEARL]						[INT] NOT NULL DEFAULT 0,
+	[CANTIDAD_DISPONIBLE]				[DECIMAL] (19,4) NOT NULL,
+	[CANTIDAD_MAXIMA]					[DECIMAL] (19,4) NOT NULL,
+	[CANTIDAD_MINIMA]					[DECIMAL] (19,4) NOT NULL
+	-- ============================
+) ON [PRIMARY]
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_LOCACION]
+	ADD CONSTRAINT [PK_INVENTARIO_LOCACION]
+		PRIMARY KEY CLUSTERED ([K_INVENTARIO_LOCACION])	
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_LOCACION]
+	ADD		[K_USUARIO_ALTA]			[INT] NOT NULL,
+			[F_ALTA]					[DATETIME] NOT NULL,
+			[K_USUARIO_CAMBIO]			[INT] NOT NULL,
+			[F_CAMBIO]					[DATETIME] NOT NULL,
+			[L_BORRADO]					[INT] NOT NULL,
+			[K_USUARIO_BAJA]			[INT] NULL,
+			[F_BAJA]					[DATETIME] NULL;
+GO
+
+
+-- ////////////////////////////////////////////////////////////////
+-- //					INVENTARIO_MOVIMIENTO
+-- ////////////////////////////////////////////////////////////////
+
+CREATE TABLE [dbo].[INVENTARIO_MOVIMIENTO] (
+	[K_INVENTARIO_MOVIMIENTO]			[INT] IDENTITY (1,1)	NOT NULL,
+	-- ============================
+	[K_LOCACION]						[INT] NOT NULL,
+	[K_INVENTARIO_MOVIMIENTO_TIPO]		[INT] NOT NULL,
+	-- ============================	
+	[LOTE_PEARL]						[INT] NOT NULL DEFAULT 0,
+	[CANTIDAD_MOVIMIENTO]				[DECIMAL] (19,4) NOT NULL
+--	[CANTIDAD_DISPONIBLE]				[DECIMAL] (19,4) NOT NULL
+	-- ============================
+) ON [PRIMARY]
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO]
+	ADD CONSTRAINT [PK_INVENTARIO_MOVIMIENTO]
+		PRIMARY KEY CLUSTERED ([K_INVENTARIO_MOVIMIENTO])	
+GO
+
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO]
+	ADD		[K_USUARIO_ALTA]			[INT] NOT NULL,
+			[F_ALTA]					[DATETIME] NOT NULL,
+			[K_USUARIO_CAMBIO]			[INT] NOT NULL,
+			[F_CAMBIO]					[DATETIME] NOT NULL,
+			[L_BORRADO]					[INT] NOT NULL,
+			[K_USUARIO_BAJA]			[INT] NULL,
+			[F_BAJA]					[DATETIME] NULL;
+GO
+
+-- //////////////////////////////////////////////////////////////
+-- //////////////////////////////////////////////////////////////
+-- //////////////////////////////////////////////////////////////
+
