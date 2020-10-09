@@ -27,32 +27,6 @@ IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENT
 	DROP TABLE [dbo].[INVENTARIO_MOVIMIENTO_TIPO]
 GO
 
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENTARIO_MAX_MIN_LOCACION]') AND type in (N'U'))
-	DROP TABLE [dbo].[INVENTARIO_MAX_MIN_LOCACION]
-GO
-
--- ////////////////////////////////////////////////////////////////
--- //					INVENTARIO_MAX_MIN_LOCACION
--- ////////////////////////////////////////////////////////////////
-
-CREATE TABLE [dbo].[INVENTARIO_MAX_MIN_LOCACION] (
-	[K_INVENTARIO_MAX_MIN_LOCACION]		[INT] IDENTITY (1,1)	NOT NULL,
-	-- ============================
-	[K_ITEM]							[INT] NOT NULL,
-	[K_LOCACION]						[INT] NOT NULL,
-	[CANTIDAD_MAXIMA]					[DECIMAL] (19,4) NOT NULL,
-	[CANTIDAD_MINIMA]					[DECIMAL] (19,4) NOT NULL
-	-- ============================
-) ON [PRIMARY]
-GO
--- //////////////////////////////////////////////////////
-ALTER TABLE [dbo].[INVENTARIO_MAX_MIN_LOCACION]
-	ADD CONSTRAINT [PK_INVENTARIO_MAX_MIN_LOCACION]
-		PRIMARY KEY CLUSTERED ([K_INVENTARIO_MAX_MIN_LOCACION])	
-GO
-
-
-
 -- ////////////////////////////////////////////////////////////////
 -- //					INVENTARIO_MOVIMIENTO_TIPO
 -- ////////////////////////////////////////////////////////////////
@@ -121,8 +95,6 @@ CREATE TABLE [dbo].[INVENTARIO_LOCACION] (
 	-- ============================
 	[LOTE_PEARL]						[INT] NOT NULL DEFAULT 0,
 	[CANTIDAD_DISPONIBLE]				[DECIMAL] (19,4) NOT NULL,
-	[CANTIDAD_MAXIMA]					[DECIMAL] (19,4) NOT NULL,
-	[CANTIDAD_MINIMA]					[DECIMAL] (19,4) NOT NULL
 	-- ============================
 ) ON [PRIMARY]
 GO
@@ -150,7 +122,8 @@ GO
 CREATE TABLE [dbo].[INVENTARIO_MOVIMIENTO] (
 	[K_INVENTARIO_MOVIMIENTO]			[INT] IDENTITY (1,1)	NOT NULL,
 	-- ============================
-	[K_LOCACION]						[INT] NOT NULL,
+	[K_LOCACION_ORIGEN]					[INT] NOT NULL,
+	[K_LOCACION_DESTINO]				[INT] NOT NULL,
 	[K_INVENTARIO_MOVIMIENTO_TIPO]		[INT] NOT NULL,
 	-- ============================	
 	[LOTE_PEARL]						[INT] NOT NULL DEFAULT 0,
@@ -164,7 +137,6 @@ ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO]
 	ADD CONSTRAINT [PK_INVENTARIO_MOVIMIENTO]
 		PRIMARY KEY CLUSTERED ([K_INVENTARIO_MOVIMIENTO])	
 GO
-
 -- //////////////////////////////////////////////////////
 ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO]
 	ADD		[K_USUARIO_ALTA]			[INT] NOT NULL,

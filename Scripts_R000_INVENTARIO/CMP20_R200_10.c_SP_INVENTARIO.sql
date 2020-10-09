@@ -17,9 +17,7 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_LI_INVENTARIO]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_LI_INVENTARIO]
 GO
---		 EXECUTE [dbo].[PG_LI_INVENTARIO] 0,139,'',-1,-1,-1,null,null
---		 EXECUTE [dbo].[PG_LI_INVENTARIO] 0,139, '' , -1 , -1 , '2020-06-08' , '2020-10-01'
---		 EXECUTE [dbo].[PG_LI_INVENTARIO] 0,139,  '' , -1 , -1 , '2020/09/01' , '2020/09/29' 
+--		 EXECUTE [dbo].[PG_LI_INVENTARIO] 0,139,  '' , -1 , -1 , '2020/09/01' , '2020/12/30' 
 CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
@@ -49,7 +47,7 @@ AS
 				,S_STATUS_INVENTARIO
 				,D_PIEL_CLASIFICACION as D_CLASIFICACION
 				,S_PIEL_CLASIFICACION as S_CLASIFICACION
-				,loc
+				,loc	AS LOCACION
 				,K_LOCACION
 				,INVENTARIO.*
 				-- =============================	
@@ -97,12 +95,15 @@ AS
 	DECLARE @VP_MENSAJE				VARCHAR(300) = ''	
 	-- ///////////////////////////////////////////			
 	SELECT		TOP (1)
-	D_VENDOR
+				D_VENDOR
+				,ITEM.K_VENDOR
 				,D_ITEM
 				,D_STATUS_INVENTARIO
 				,S_STATUS_INVENTARIO
 				,D_PIEL_CLASIFICACION
 				,S_PIEL_CLASIFICACION
+				,loc	AS LOCACION
+				,K_LOCACION
 				,INVENTARIO.*
 				-- =============================	
 	FROM		INVENTARIO
@@ -242,6 +243,7 @@ CREATE PROCEDURE [dbo].[PG_IN_INVENTARIO_RECIBO]
 	@PP_K_ORDEN_COMPRA_PEDIDO				[VARCHAR](50),
 	@PP_K_DETAILS_BPO_RECIBO				[INT],
 	-- ===========================
+	@PP_SERIE_NO							[VARCHAR](50),
 	@PP_LOTE_VENDOR							[VARCHAR](50),
 	@PP_LOTE_PEARL							[INT],
 	@PP_LOTE_NUMERO_CONSECUTIVO				[INT],
@@ -306,11 +308,12 @@ AS
 				,[K_ORDEN_COMPRA_PEDIDO]		
 				,[K_DETAILS_BPO_RECIBO]		
 				-- =========================
-				,[LOTE_VENDOR]				
-				,[LOTE_PEARL]				
-				,[LOTE_NUMERO_CONSECUTIVO]	
+				,[SERIE_NO]
+				,[LOTE_VENDOR]
+				,[LOTE_PEARL]
+				,[LOTE_NUMERO_CONSECUTIVO]
 				-- =========================
-				,[F_DATE_INVENTARIO]			
+				,[F_DATE_INVENTARIO]
 				,[C_INVENTARIO]				
 				-- =========================
 				,[CANTIDAD_RECIBIDA]						
@@ -327,6 +330,7 @@ AS
 				,@PP_K_ORDEN_COMPRA_PEDIDO	
 				,@PP_K_DETAILS_BPO_RECIBO	
 				-- =========================
+				,@PP_SERIE_NO
 				,@PP_LOTE_VENDOR				
 				,@PP_LOTE_PEARL				
 				,@PP_LOTE_NUMERO_CONSECUTIVO	
@@ -379,35 +383,53 @@ CREATE PROCEDURE [dbo].[PG_IN_INVENTARIO_MOVIMIENTO]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
 	-- ===========================
-	@PP_K_LOCACION							[INT],
+	@PP_K_ITEM								INT,
+	@PP_K_LOCACION_ORIGEN					INT,
+	@PP_K_LOCACION_DESTINO					INT,
 	-- ===========================
-	@PP_K_INVENTARIO_MOVIMIENTO_TIPO		[INT],
+	@PP_K_INVENTARIO_MOVIMIENTO_TIPO		INT,
 	-- ===========================
-	@PP_LOTE_PEARL							[INT],
+	@PP_LOTE_PEARL							INT,
 	-- ===========================
-	@PP_CANTIDAD_MOVIMIENTO					[DECIMAL](19,4)
+	@PP_CANTIDAD_MOVIMIENTO					DECIMAL(19,4)
 AS			
 	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
+	DECLARE @VP_MAX_MIN						INT
 --BEGIN TRANSACTION 
 --BEGIN TRY
+	IF @VP_MENSAJE=''
+	BEGIN
+		SELECT	@VP_MAX_MIN			= ISNULL((	SELECT	COUNT(K_ITEM)
+											FROM	INVENTARIO_MIN_MAX
+											WHERE	K_ITEM=@PP_K_ITEM	),0)
+		
+		IF @VP_MAX_MIN=0
+		BEGIN
+			--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
+			SET @VP_MENSAJE='El [ITEM] #'+CONVERT(VARCHAR(10),@PP_K_ITEM)+ ', no tiene un registro de Máximos/Mínimos en el sistema. Verificar...'
+			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		END
+	END
 
 	IF @VP_MENSAJE=''
 	BEGIN
 	--============================================================================
 	--======================================INSERTAR EL MOVIMIENTO_INVENTARIO
 	--============================================================================
-		INSERT INTO MOVIMIENTO_INVENTARIO
-			(	[K_LOCACION]					
+		INSERT INTO INVENTARIO_MOVIMIENTO
+			(	[K_LOCACION_ORIGEN]
+				,[K_LOCACION_DESTINO]
 				,[K_INVENTARIO_MOVIMIENTO_TIPO]
 				-- =========================
 				,[LOTE_PEARL]				
 				-- =========================
-				,[CANTIDAD_RECIBIDA]						
+				,[CANTIDAD_MOVIMIENTO]						
 				-- ===========================
 				,[K_USUARIO_ALTA], [F_ALTA], [K_USUARIO_CAMBIO], [F_CAMBIO],
 				[L_BORRADO], [K_USUARIO_BAJA], [F_BAJA]  )
 		VALUES	
-			(	@PP_K_LOCACION
+			(	@PP_K_LOCACION_ORIGEN
+				,@PP_K_LOCACION_DESTINO
 				,@PP_K_INVENTARIO_MOVIMIENTO_TIPO
 				-- =========================	
 				,@PP_LOTE_PEARL				
@@ -439,9 +461,9 @@ AS
 --	-- /////////////////////////////////////////////////////////////////////	
 --	IF @VP_MENSAJE<>''
 --	BEGIN
---		SET		@VP_MENSAJE = 'Not is possible [Insert] at [INVENTARIO]: ' + @VP_MENSAJE 
+--		SET		@VP_MENSAJE = 'No es posible [Insertar] el [INVENTARIO_MOVIMIENTO]: ' + @VP_MENSAJE 
 --	END
---	SELECT	@VP_MENSAJE AS MENSAJE, @PP_K_ITEM AS CLAVE
+--	SELECT	@VP_MENSAJE AS MENSAJE	--, @PP_LOTE_PEARL AS CLAVE
 	-- //////////////////////////////////////////////////////////////
 GO
 
@@ -457,7 +479,9 @@ CREATE PROCEDURE [dbo].[PG_IN_INVENTARIO_LOCACION]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
 	-- ===========================
-	@PP_K_LOCACION					[INT],
+	@PP_K_INVENTARIO				[INT],
+	@PP_K_LOCACION_ORIGEN			[INT],
+	@PP_K_LOCACION_DESTINO			[INT],
 	@PP_K_ITEM						[INT],
 	-- ===========================
 	@PP_LOTE_PEARL					[INT],
@@ -465,26 +489,26 @@ CREATE PROCEDURE [dbo].[PG_IN_INVENTARIO_LOCACION]
 	@PP_CANTIDAD_MOVIMIENTO			[DECIMAL](19,4)
 AS			
 	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
---BEGIN TRANSACTION 
---BEGIN TRY
+BEGIN TRANSACTION 
+BEGIN TRY
 
 	IF @VP_MENSAJE=''
 	BEGIN
 	--============================================================================
-	--======================================INSERTAR EL MOVIMIENTO_INVENTARIO
+	--======================================INSERTAR EL INVENTARIO_LOCACION
 	--============================================================================
-		INSERT INTO MOVIMIENTO_INVENTARIO
-			(	[K_LOCACION]					
+		INSERT INTO INVENTARIO_LOCACION
+			(	[K_LOCACION]
 				,[K_ITEM]
 				-- =========================
-				,[LOTE_PEARL]				
+				,[LOTE_PEARL]
 				-- =========================
-				,[CANTIDAD_RECIBIDA]						
+				,[CANTIDAD_DISPONIBLE]
 				-- ===========================
 				,[K_USUARIO_ALTA], [F_ALTA], [K_USUARIO_CAMBIO], [F_CAMBIO],
 				[L_BORRADO], [K_USUARIO_BAJA], [F_BAJA]  )
 		VALUES	
-			(	@PP_K_LOCACION
+			(	@PP_K_LOCACION_DESTINO
 				,@PP_K_ITEM
 				-- =========================	
 				,@PP_LOTE_PEARL				
@@ -499,26 +523,76 @@ AS
 					--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
 					SET @VP_MENSAJE='El movimiento no fue insertado.'
 					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-				END				
+				END
+				
+		IF @VP_MENSAJE=''
+		BEGIN
+			EXECUTE [dbo].[PG_IN_INVENTARIO_MOVIMIENTO]		@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
+															,@PP_K_ITEM
+															,@PP_K_LOCACION_ORIGEN			,@PP_K_LOCACION_DESTINO					
+															-- ===========================
+															--#00 SALIDA MATERIAL	/	#10 ENTRADA MATERIAL
+															,10		--TIPO DE MOVIMIENTO (ENTRADA MATERIAL)
+															,@PP_LOTE_PEARL							
+															-- ===========================
+															,@PP_CANTIDAD_MOVIMIENTO					
+		END
+
+		IF @VP_MENSAJE=''
+		BEGIN
+			-- ESTATUS INVENTARIO:		#00 SIN DEFINIR	/	#10 PREREGISTRADO	/	#20 INVENTARIADO
+			DECLARE @VP_ESTATUS_ACTUAL	INT
+
+				SELECT	@VP_ESTATUS_ACTUAL=K_STATUS_INVENTARIO 
+				FROM	INVENTARIO 
+				WHERE	K_INVENTARIO=@PP_K_INVENTARIO
+
+			IF @VP_ESTATUS_ACTUAL IS NULL
+			BEGIN
+				--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
+				SET @VP_MENSAJE='El registro no fue encontrado.'
+				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			END
+			ELSE IF @VP_ESTATUS_ACTUAL<> 10
+			BEGIN
+				--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
+				SET @VP_MENSAJE='El registro no puede ser modificado.'
+				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			END
+			ELSE
+			BEGIN
+				UPDATE INVENTARIO
+				SET		K_STATUS_INVENTARIO=20 
+				WHERE K_INVENTARIO=@PP_K_INVENTARIO
+
+					IF @@ROWCOUNT = 0
+					BEGIN
+						--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
+						SET @VP_MENSAJE='El movimiento no fue insertado.'
+						RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+					END
+			END
+		END
+													
 	END
 	
 -- /////////////////////////////////////////////////////////////////////
---COMMIT TRANSACTION 
---END TRY
+COMMIT TRANSACTION 
+END TRY
 
---BEGIN CATCH
---	/* Ocurrió un error, deshacemos los cambios*/ 
---	ROLLBACK TRANSACTION
---	DECLARE @VP_ERROR_TRANS NVARCHAR(4000);
---	SET @VP_ERROR_TRANS = ERROR_MESSAGE() 
---	SET @VP_MENSAJE = 'ERROR:// ' + @VP_ERROR_TRANS
---END CATCH	
---	-- /////////////////////////////////////////////////////////////////////	
---	IF @VP_MENSAJE<>''
---	BEGIN
---		SET		@VP_MENSAJE = 'Not is possible [Insert] at [INVENTARIO]: ' + @VP_MENSAJE 
---	END
---	SELECT	@VP_MENSAJE AS MENSAJE, @PP_K_ITEM AS CLAVE
+BEGIN CATCH
+	/* Ocurrió un error, deshacemos los cambios*/ 
+	ROLLBACK TRANSACTION
+	DECLARE @VP_ERROR_TRANS NVARCHAR(4000);
+	SET @VP_ERROR_TRANS = ERROR_MESSAGE() 
+	SET @VP_MENSAJE = 'ERROR:// ' + @VP_ERROR_TRANS
+END CATCH	
+	-- /////////////////////////////////////////////////////////////////////	
+	IF @VP_MENSAJE<>''
+	BEGIN
+		SET		@VP_MENSAJE = 'No es posible [Insertar] el [INVENTARIO_LOCACIÓN]: ' + @VP_MENSAJE 
+	END
+	SELECT	@VP_MENSAJE AS MENSAJE, @PP_K_ITEM AS CLAVE
 	-- //////////////////////////////////////////////////////////////
 GO
 
