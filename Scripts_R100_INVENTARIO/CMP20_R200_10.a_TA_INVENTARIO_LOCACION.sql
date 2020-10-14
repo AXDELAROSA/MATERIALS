@@ -7,13 +7,16 @@
 -- // CREATION DATE:	20201003
 -- ////////////////////////////////////////////////////////////// 
 
-USE [DATA_02Pruebas]
+USE [DATA_02]
 GO
 
 -- //////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////
 -- // DROPs
 -- //////////////////////////////////////////////////////////////
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENTARIO_MOVIMIENTO_X_REGISTRO]') AND type in (N'U'))
+	DROP TABLE [dbo].[INVENTARIO_MOVIMIENTO_X_REGISTRO]
+GO
 
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[INVENTARIO_MOVIMIENTO]') AND type in (N'U'))
 	DROP TABLE [dbo].[INVENTARIO_MOVIMIENTO]
@@ -78,8 +81,16 @@ AS
 				@PP_O_INVENTARIO_MOVIMIENTO_TIPO, @PP_L_INVENTARIO_MOVIMIENTO_TIPO	 )
 GO
 
-EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,00, 'SALIDA',	 'SLIDA', '',	00,1
-EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,10, 'ENTRADA',	 'ENTRA', '',	10,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,05, 'REGISTRO EN SISTEMA',			'REGSIS', '',	05,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,10, 'ENTRADA X LIBERACIÓN',		'ENXLIB', '',	10,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,20, 'TRANSFERENCIA A LOCACIÓN',	'TRXLOC', '',	20,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,30, 'FOLIO NUEVO',					'FOLNEW', '',	30,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,40, 'TRANSFERENCIA A ORDEN',		'TRXORD', '',	40,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,50, 'TRANSFERENCIA A FOLIO',		'TRXFOL', '',	50,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,60, 'DEVOLUCIÓN',					'DVOLUC', '',	60,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,70, 'ISSUE OUT',					'ISSOUT', '',	70,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,80, 'REIMPRESIÓN',					'REIMPR', '',	80,1
+EXECUTE [dbo].[PG_CI_INVENTARIO_MOVIMIENTO_TIPO] 0,0,90, 'FOLIO SCRAP',					'FOLSCR', '',	90,1
 -- =================================================================================
 GO
 
@@ -122,13 +133,21 @@ GO
 CREATE TABLE [dbo].[INVENTARIO_MOVIMIENTO] (
 	[K_INVENTARIO_MOVIMIENTO]			[INT] IDENTITY (1,1)	NOT NULL,
 	-- ============================
-	[K_LOCACION_ORIGEN]					[INT] NOT NULL,
-	[K_LOCACION_DESTINO]				[INT] NOT NULL,
+	[K_ITEM]							[INT] NOT NULL,
 	[K_INVENTARIO_MOVIMIENTO_TIPO]		[INT] NOT NULL,
-	-- ============================	
 	[LOTE_PEARL]						[INT] NOT NULL DEFAULT 0,
-	[CANTIDAD_MOVIMIENTO]				[DECIMAL] (19,4) NOT NULL
---	[CANTIDAD_DISPONIBLE]				[DECIMAL] (19,4) NOT NULL
+	-- ============================	
+	[K_LOCACION_ORIGEN]					[INT] NOT NULL DEFAULT 0,
+	[K_FOLIO_ORIGEN]					[INT] NOT NULL DEFAULT 0,
+	[K_ORDEN_TRABAJO_ORIGEN]			[INT] NOT NULL DEFAULT 0,
+	-- ============================	
+	[K_LOCACION_DESTINO]				[INT] NOT NULL,
+	[K_FOLIO_DESTINO]					[INT] NOT NULL DEFAULT 0,
+	[K_ORDEN_TRABAJO_DESTINO]			[INT] NOT NULL DEFAULT 0,
+	-- ============================	
+	[CANTIDAD_MOVIMIENTO]				[DECIMAL] (19,4) NOT NULL,
+	[CANTIDAD_ORIGEN]					[DECIMAL] (19,4) NOT NULL DEFAULT 0,
+	[CANTIDAD_DESTINO]					[DECIMAL] (19,4) NOT NULL DEFAULT 0
 	-- ============================
 ) ON [PRIMARY]
 GO
@@ -139,6 +158,48 @@ ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO]
 GO
 -- //////////////////////////////////////////////////////
 ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO]
+	ADD		[K_USUARIO_ALTA]			[INT] NOT NULL,
+			[F_ALTA]					[DATETIME] NOT NULL,
+			[K_USUARIO_CAMBIO]			[INT] NOT NULL,
+			[F_CAMBIO]					[DATETIME] NOT NULL,
+			[L_BORRADO]					[INT] NOT NULL,
+			[K_USUARIO_BAJA]			[INT] NULL,
+			[F_BAJA]					[DATETIME] NULL;
+GO
+
+
+-- ////////////////////////////////////////////////////////////////
+-- //				INVENTARIO_MOVIMIENTO_X_REGISTRO
+-- ////////////////////////////////////////////////////////////////
+
+CREATE TABLE [dbo].[INVENTARIO_MOVIMIENTO_X_REGISTRO] (
+	[K_INVENTARIO_MOVIMIENTO_X_REGISTRO]			[INT] IDENTITY (1,1)	NOT NULL,
+	-- ============================
+	[K_INVENTARIO]									[INT] NOT NULL,
+	[K_ITEM]										[INT] NOT NULL,
+	[K_INVENTARIO_MOVIMIENTO_TIPO]					[INT] NOT NULL,
+	[LOTE_PEARL]									[INT] NOT NULL DEFAULT 0,
+	[SERIE_NO]										[VARCHAR](50) NOT NULL DEFAULT 'NOSERIE',
+	-- ============================	
+	[K_LOCACION_ORIGEN]								[INT] NOT NULL,
+	[K_FOLIO_ORIGEN]								[INT] NOT NULL DEFAULT 0,
+	[K_ORDEN_TRABAJO_ORIGEN]						[INT] NOT NULL DEFAULT 0,
+	-- ============================	
+	[K_LOCACION_DESTINO]							[INT] NOT NULL,
+	[K_FOLIO_DESTINO]								[INT] NOT NULL DEFAULT 0,
+	[K_ORDEN_TRABAJO_DESTINO]						[INT] NOT NULL DEFAULT 0,
+	-- ============================	
+	[CANTIDAD_MOVIMIENTO]							[DECIMAL] (19,4) NOT NULL
+	-- ============================
+) ON [PRIMARY]
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO_X_REGISTRO]
+	ADD CONSTRAINT [PK_INVENTARIO_MOVIMIENTO_X_REGISTRO]
+		PRIMARY KEY CLUSTERED ([K_INVENTARIO_MOVIMIENTO_X_REGISTRO])	
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[INVENTARIO_MOVIMIENTO_X_REGISTRO]
 	ADD		[K_USUARIO_ALTA]			[INT] NOT NULL,
 			[F_ALTA]					[DATETIME] NOT NULL,
 			[K_USUARIO_CAMBIO]			[INT] NOT NULL,
