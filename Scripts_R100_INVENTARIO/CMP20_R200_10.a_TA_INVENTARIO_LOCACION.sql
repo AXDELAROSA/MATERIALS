@@ -213,3 +213,61 @@ GO
 -- //////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////
 
+
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[FOLIO]') AND type in (N'U'))
+	DROP TABLE [dbo].[FOLIO]
+GO
+-- ////////////////////////////////////////////////////////////////
+-- //					FOLIO
+-- ////////////////////////////////////////////////////////////////
+
+CREATE TABLE [dbo].[FOLIO] (
+	[K_FOLIO]							[INT] IDENTITY (1,1)	NOT NULL,
+	-- ============================
+	[K_LOCACION]						[INT] NOT NULL DEFAULT 4,				--MHI
+	[K_ORDEN_TRABAJO]					[INT] NOT NULL DEFAULT 0,
+	[TIPO]								[VARCHAR](50) NOT NULL DEFAULT 'B',		-- PARA LA PIEL SE ASIGNA FOLIO BASE (B) - -  SÓLO DE PUEDE MOVER A MHI.
+	-- ============================	
+	[F_DATE_FOLIO]						[DATE] NOT NULL,
+	-- ============================
+) ON [PRIMARY]
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[FOLIO]
+	ADD CONSTRAINT [PK_FOLIO]
+		PRIMARY KEY CLUSTERED ([K_FOLIO])	
+GO
+-- //////////////////////////////////////////////////////
+ALTER TABLE [dbo].[FOLIO]
+	ADD		[K_USUARIO_ALTA]			[INT] NOT NULL,
+			[F_ALTA]					[DATETIME] NOT NULL,
+			[K_USUARIO_CAMBIO]			[INT] NOT NULL,
+			[F_CAMBIO]					[DATETIME] NOT NULL,
+			[L_BORRADO]					[INT] NOT NULL,
+			[K_USUARIO_BAJA]			[INT] NULL,
+			[F_BAJA]					[DATETIME] NULL;
+GO
+
+
+INSERT INTO FOLIO
+			(	[K_LOCACION]			
+				,[K_ORDEN_TRABAJO]		
+				,[TIPO]					
+				-- =====================
+				,[F_DATE_FOLIO]			
+				-- =====================
+				,[K_USUARIO_ALTA], [F_ALTA], [K_USUARIO_CAMBIO], [F_CAMBIO],
+				[L_BORRADO], [K_USUARIO_BAJA], [F_BAJA]  )
+		VALUES	
+			(	4
+				,0
+				,'B'
+				-- ===========================
+				,GETDATE(),
+				-- ============================
+				139, GETDATE(), 139, GETDATE(),
+				0, NULL, NULL  )
+
+UPDATE	INVENTARIO
+SET		K_STATUS_INVENTARIO=10,
+		K_FOLIO=1
