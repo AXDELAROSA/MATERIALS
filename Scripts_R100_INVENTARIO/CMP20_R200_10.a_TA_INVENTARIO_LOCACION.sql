@@ -213,7 +213,7 @@ GO
 -- //////////////////////////////////////////////////////////////
 -- //////////////////////////////////////////////////////////////
 
-
+/*
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[FOLIO]') AND type in (N'U'))
 	DROP TABLE [dbo].[FOLIO]
 GO
@@ -271,3 +271,4 @@ INSERT INTO FOLIO
 UPDATE	INVENTARIO
 SET		K_STATUS_INVENTARIO=10,
 		K_FOLIO=1
+*/

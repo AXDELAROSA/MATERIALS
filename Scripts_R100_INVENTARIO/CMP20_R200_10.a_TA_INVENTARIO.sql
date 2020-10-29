@@ -134,6 +134,7 @@ CREATE TABLE [dbo].[FOLIO] (
 	-- ============================	
 	[F_DATE_FOLIO]						[DATE] NOT NULL,
 	-- ============================
+	[K_ITEM_BASE]						[INT] NOT NULL DEFAULT 0
 ) ON [PRIMARY]
 GO
 -- //////////////////////////////////////////////////////

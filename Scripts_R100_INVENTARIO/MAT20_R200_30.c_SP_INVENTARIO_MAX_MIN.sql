@@ -1,13 +1,13 @@
 -- //////////////////////////////////////////////////////////////
 -- // DATA BASE:		DATA_02
--- // MODULE:			INVENTARIO_MAX_MIN
+-- // MODULE:			INVENTARIO_MAXIMOS/MINIMOS
 -- // OPERATION:		TABLE
 -- //////////////////////////////////////////////////////////////
 -- // AUTHOR:			AX DE LA ROSA
--- // CREATION DATE:	2020106
+-- // CREATION DATE:	20201022
 -- ////////////////////////////////////////////////////////////// 
 
- USE [DATA_02Pruebas]
+ USE [DATA_02]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -17,13 +17,15 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_LI_INVENTARIO_MIN_MAX]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_LI_INVENTARIO_MIN_MAX]
 GO
---		 EXECUTE [dbo].[PG_LI_INVENTARIO_MIN_MAX] 0,139, '',-1
+--	SELECT * FROM		[COMPRAS].[dbo].ITEM WHERE K_CLASS_ITEM=2
+--		 EXECUTE [dbo].[PG_LI_INVENTARIO_MIN_MAX] 0,139, '',-1	
+--		 EXECUTE [dbo].[PG_LI_INVENTARIO_MIN_MAX] 0,139, '',128
 CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_MIN_MAX]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
 	-- ===========================
 	@PP_BUSCAR						VARCHAR(25),
-	@PP_K_LOCACION					INT
+	@PP_K_VENDOR					INT
 AS
 	DECLARE @VP_MENSAJE				VARCHAR(300) = ''
 	DECLARE @VP_LI_N_REGISTROS		INT =5000
@@ -33,23 +35,27 @@ AS
 	EXECUTE [BD_GENERAL].DBO.[PG_RN_OBTENER_ID_X_REFERENCIA]			
 								@PP_BUSCAR,	@OU_K_ELEMENTO = @VP_K_FOLIO	OUTPUT
 	-- =========================================		
-	IF @VP_MENSAJE=''
-	BEGIN
 	SELECT		TOP (@VP_LI_N_REGISTROS)
 				-- =============================
-				D_ITEM
-				,INVENTARIO_MIN_MAX.*
+				K_ITEM
+				,D_ITEM
+				,CANTIDAD_MINIMA
+				,CANTIDAD_MAXIMA
+				,PART_NUMBER_ITEM_VENDOR
+				,PART_NUMBER_ITEM_PEARL
+				,D_VENDOR
 				-- =============================	
-	FROM		INVENTARIO_MIN_MAX
-	INNER JOIN	[COMPRAS_Pruebas].[dbo].ITEM			ON INVENTARIO_MIN_MAX.K_ITEM=ITEM.K_ITEM
+	FROM		[COMPRAS].[dbo].ITEM
+	INNER JOIN  [COMPRAS].[dbo].VENDOR ON VENDOR.K_VENDOR=ITEM.K_VENDOR
 				-- =============================
-	WHERE		(	INVENTARIO_MIN_MAX.K_INVENTARIO_MIN_MAX=@VP_K_FOLIO
-				OR	D_ITEM								LIKE '%'+@PP_BUSCAR+'%'		)
+	WHERE		(	ITEM.K_ITEM=@VP_K_FOLIO
+				OR	D_ITEM					LIKE '%'+@PP_BUSCAR+'%'		)
 				-- =============================
+	AND			(@PP_K_VENDOR=-1	OR	@PP_K_VENDOR=ITEM.K_VENDOR)
+				-- =============================
+	AND			K_CLASS_ITEM=2
 	AND			ITEM.L_BORRADO<>1
-	AND			INVENTARIO_MIN_MAX.L_BORRADO<>1
 	ORDER BY	D_ITEM	DESC
-	END
 	-- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -60,25 +66,34 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_SK_INVENTARIO_MIN_MAX]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_SK_INVENTARIO_MIN_MAX]
 GO
---		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,6
+--		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,70
+--		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,180
+--		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,181
 CREATE PROCEDURE [dbo].[PG_SK_INVENTARIO_MIN_MAX]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
 	-- ===========================
-	@PP_K_INVENTARIO_MIN_MAX		INT
+	@PP_K_ITEM						INT
 AS
 	DECLARE @VP_MENSAJE				VARCHAR(300) = ''	
 	-- ///////////////////////////////////////////			
 	SELECT		TOP (1)
 				-- =============================
-				D_ITEM
-				,INVENTARIO_MIN_MAX.*
+				K_ITEM
+				,D_ITEM
+				,CANTIDAD_MINIMA
+				,CANTIDAD_MAXIMA
+				,PART_NUMBER_ITEM_VENDOR
+				,PART_NUMBER_ITEM_PEARL
+				,D_VENDOR
+				,ITEM.K_VENDOR
 				-- =============================	
-	FROM		INVENTARIO_MIN_MAX
-	INNER JOIN	[COMPRAS_Pruebas].[dbo].ITEM			ON INVENTARIO_MIN_MAX.K_ITEM=ITEM.K_ITEM
+	FROM		[COMPRAS].[dbo].ITEM
+	INNER JOIN  [COMPRAS].[dbo].VENDOR ON VENDOR.K_VENDOR=ITEM.K_VENDOR
 				-- =============================
-	WHERE		INVENTARIO_MIN_MAX.K_INVENTARIO_MIN_MAX=@PP_K_INVENTARIO_MIN_MAX
-	AND			INVENTARIO_MIN_MAX.L_BORRADO<>1		
+	WHERE		ITEM.K_ITEM=@PP_K_ITEM
+	AND			K_CLASS_ITEM=2
+	AND			ITEM.L_BORRADO<>1
 	-- ////////////////////////////////////////////////////////////////////
 GO
 
@@ -89,12 +104,11 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_IN_LOG_INVENTARIO_MIN_MAX]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_IN_LOG_INVENTARIO_MIN_MAX]
 GO
-
+--			SELECT * FROM [COMPRAS].[dbo].LOG_INVENTARIO_MIN_MAX
 CREATE PROCEDURE [dbo].[PG_IN_LOG_INVENTARIO_MIN_MAX]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
 	-- ===========================
-	@PP_K_INVENTARIO_MIN_MAX		INT,
 	@PP_K_ITEM							[INT],
 	-- ===========================
 	@PP_CANTIDAD_MINIMA_NUEVA			[DECIMAL](19,4),
@@ -103,15 +117,11 @@ CREATE PROCEDURE [dbo].[PG_IN_LOG_INVENTARIO_MIN_MAX]
 	@PP_CANTIDAD_MAXIMA					[DECIMAL](19,4)
 AS			
 	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
-	
-	IF @VP_MENSAJE=''
-	BEGIN
 	--============================================================================
 	--======================================INSERTAR EL LOG
 	--============================================================================
-		INSERT INTO LOG_INVENTARIO_MIN_MAX
-			(	[K_INVENTARIO_MIN_MAX]
-				,[K_ITEM]
+		INSERT INTO [COMPRAS].[dbo].LOG_INVENTARIO_MIN_MAX
+			(	[K_ITEM]
 				-- ============================
 				,[CANTIDAD_MINIMA_NUEVA]
 				,[CANTIDAD_MAXIMA_NUEVA]
@@ -120,8 +130,7 @@ AS
 				-- ===========================
 				,[K_USUARIO_ALTA], [F_ALTA]			)
 		VALUES	
-			(	@PP_K_INVENTARIO_MIN_MAX
-				,@PP_K_ITEM						
+			(	@PP_K_ITEM						
 				-- ===========================
 				,@PP_CANTIDAD_MINIMA_NUEVA		
 				,@PP_CANTIDAD_MAXIMA_NUEVA		
@@ -132,165 +141,63 @@ AS
 
 		IF @@ROWCOUNT = 0
 		BEGIN
-			--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
 			SET @VP_MENSAJE='El registro no fue insertado[L].'
 			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		END
-				
-	END	
+		END			
 -- /////////////////////////////////////////////////////////////////////
 GO
 
 
 -- //////////////////////////////////////////////////////////////
--- // STORED PROCEDURE ---> INSERT MIN_MAX
--- //////////////////////////////////////////////////////////////
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_IN_INVENTARIO_MIN_MAX]') AND type in (N'P', N'PC'))
-	DROP PROCEDURE [dbo].[PG_IN_INVENTARIO_MIN_MAX]
-GO
-
-CREATE PROCEDURE [dbo].[PG_IN_INVENTARIO_MIN_MAX]
-	@PP_K_SISTEMA_EXE				INT,
-	@PP_K_USUARIO_ACCION			INT,
-	-- ===========================
-	@PP_K_ITEM							[INT],
-	-- ===========================
-	@PP_CANTIDAD_MINIMA					[DECIMAL](19,4),
-	@PP_CANTIDAD_MAXIMA					[DECIMAL](19,4)
-AS			
-	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
-	DECLARE @VP_K_INVENTARIO_MIN_MAX		INT
-BEGIN TRANSACTION 
-BEGIN TRY	
-	IF @VP_MENSAJE=''
-	BEGIN
-	--============================================================================
-	--======================================INSERTAR MAX_MINIMOS
-	--============================================================================
-		INSERT INTO INVENTARIO_MIN_MAX
-			(	[K_ITEM]
-				-- ============================
-				,[CANTIDAD_MINIMA]	
-				,[CANTIDAD_MAXIMA]
-				-- ===========================
-				,[K_USUARIO_ALTA], [F_ALTA]			)
-		VALUES	
-			(	@PP_K_ITEM						
-				-- ===========================
-				,@PP_CANTIDAD_MINIMA				
-				,@PP_CANTIDAD_MAXIMA
-				-- ============================
-				,@PP_K_USUARIO_ACCION, GETDATE()	  )
-
-		IF @@ROWCOUNT = 0
-		BEGIN
-			--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
-			SET @VP_MENSAJE='El registro no fue insertado...'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		END
-		ELSE
-		BEGIN
-			SELECT @VP_K_INVENTARIO_MIN_MAX=SCOPE_IDENTITY()
-
-			IF @VP_K_INVENTARIO_MIN_MAX=NULL
-			BEGIN
-				--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
-				SET @VP_MENSAJE='No se asignó valor al registro...'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-			END
-		END
-				
-	END
-
-	IF @VP_MENSAJE=''
-	BEGIN
-		EXECUTE [dbo].[PG_IN_LOG_INVENTARIO_MIN_MAX]	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
-														-- ===========================
-														,@VP_K_INVENTARIO_MIN_MAX			,@PP_K_ITEM				
-														-- ==========================
-														,@PP_CANTIDAD_MINIMA				,@PP_CANTIDAD_MAXIMA		
-														,0									,0
-	END
--- /////////////////////////////////////////////////////////////////////
-COMMIT TRANSACTION 
-END TRY
-
-BEGIN CATCH
-	ROLLBACK TRANSACTION
-	DECLARE @VP_ERROR_TRANS NVARCHAR(4000);
-	SET @VP_ERROR_TRANS = ERROR_MESSAGE() 
-	SET @VP_MENSAJE = 'ERROR:// ' + @VP_ERROR_TRANS
-END CATCH	
-	-- /////////////////////////////////////////////////////////////////////	
-	IF @VP_MENSAJE<>''
-	BEGIN
-		SET		@VP_MENSAJE = 'No es posible [Insertar] el registro: ' + @VP_MENSAJE 
-	END
-
-	SELECT	@VP_MENSAJE AS MENSAJE, @VP_K_INVENTARIO_MIN_MAX AS CLAVE	
--- /////////////////////////////////////////////////////////////////////
-GO
-
-
--- //////////////////////////////////////////////////////////////
--- // STORED PROCEDURE ---> INSERT MIN_MAX
+-- // STORED PROCEDURE ---> ACTUALIZA LOS MIN_MAX DEL ITEM
 -- //////////////////////////////////////////////////////////////
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_UP_INVENTARIO_MIN_MAX]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_UP_INVENTARIO_MIN_MAX]
 GO
-
+--		 EXECUTE [dbo].[PG_UP_INVENTARIO_MIN_MAX] 0,139, 70 , '500' , '5000' 
 CREATE PROCEDURE [dbo].[PG_UP_INVENTARIO_MIN_MAX]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
 	-- ===========================
-	@PP_K_INVENTARIO_MIN_MAX			[INT],
 	@PP_K_ITEM							[INT],
 	-- ===========================
 	@PP_CANTIDAD_MINIMA					[DECIMAL](19,4),
 	@PP_CANTIDAD_MAXIMA					[DECIMAL](19,4)
 AS			
-	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
-	DECLARE @VP_K_INVENTARIO_MIN_MAX		INT
+	DECLARE @VP_MENSAJE		VARCHAR(500) = ''
+			,@VP_MINIMA		DECIMAL (19,4)
+			,@VP_MAXIMA     DECIMAL (19,4)
 BEGIN TRANSACTION 
-BEGIN TRY	
-	IF @VP_MENSAJE=''
-	BEGIN
+BEGIN TRY
+
+		SELECT	@VP_MINIMA=CANTIDAD_MINIMA
+				,@VP_MAXIMA=CANTIDAD_MAXIMA
+		FROM	[COMPRAS].[dbo].ITEM
+		WHERE	K_ITEM=@PP_K_ITEM
+		AND		K_CLASS_ITEM=2
+		AND		ITEM.L_BORRADO<>1	
 	--============================================================================
 	--======================================ACTUALIZAR MAX_MINIMOS
 	--============================================================================
-		UPDATE INVENTARIO_MIN_MAX
+		UPDATE [COMPRAS].[dbo].ITEM
 		SET
-			[K_ITEM]				= @PP_K_ITEM						
-			-- ====================== ===========================
-			,[CANTIDAD_MINIMA]		= @PP_CANTIDAD_MINIMA				
-			,[CANTIDAD_MAXIMA]		= @PP_CANTIDAD_MAXIMA
-			-- ====================== ============================
-			,[K_USUARIO_ALTA] 		= @PP_K_USUARIO_ACCION
-			,[F_ALTA]				= GETDATE()
-		WHERE	K_INVENTARIO_MIN_MAX=@PP_K_INVENTARIO_MIN_MAX
+			[CANTIDAD_MINIMA]		= @PP_CANTIDAD_MINIMA				
+			,[CANTIDAD_MAXIMA]		= @PP_CANTIDAD_MAXIMA			
+		WHERE	K_ITEM=@PP_K_ITEM
+		AND		K_CLASS_ITEM=2
+		AND		ITEM.L_BORRADO<>1
 		
 		IF @@ROWCOUNT = 0
 		BEGIN
-			--RAISERROR (@VP_ERROR_1, 16, 1 ) --MENSAJE - Severity -State.
-			SET @VP_MENSAJE='El registro no fue actualizado...'
+			SET @VP_MENSAJE='El registro no fue actualizado...[I]'
 			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
 		END
-				
-	END
 
 	IF @VP_MENSAJE=''
 	BEGIN
-		DECLARE @VP_MINIMA DECIMAL (19,4),	@VP_MAXIMA DECIMAL (19,4)
-
-		SELECT	@VP_MINIMA=CANTIDAD_MINIMA,
-				@VP_MAXIMA=CANTIDAD_MAXIMA
-		FROM	INVENTARIO_MIN_MAX
-		WHERE	K_INVENTARIO_MIN_MAX=@PP_K_INVENTARIO_MIN_MAX
-		AND		K_ITEM=@PP_K_ITEM
-
 		EXECUTE [dbo].[PG_IN_LOG_INVENTARIO_MIN_MAX]	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
 														-- ===========================
-														,@PP_K_INVENTARIO_MIN_MAX			,@PP_K_ITEM				
+														,@PP_K_ITEM				
 														-- ==========================
 														,@PP_CANTIDAD_MINIMA				,@PP_CANTIDAD_MAXIMA		
 														,@VP_MINIMA							,@VP_MAXIMA
@@ -308,10 +215,10 @@ END CATCH
 	-- /////////////////////////////////////////////////////////////////////	
 	IF @VP_MENSAJE<>''
 	BEGIN
-		SET		@VP_MENSAJE = 'No es posible [Insertar] el registro: ' + @VP_MENSAJE 
+		SET		@VP_MENSAJE = 'No es posible realizar la acción: ' + @VP_MENSAJE 
 	END
 
-	SELECT	@VP_MENSAJE AS MENSAJE, @VP_K_INVENTARIO_MIN_MAX AS CLAVE	
+	SELECT	@VP_MENSAJE AS MENSAJE, @PP_K_ITEM AS CLAVE	
 -- /////////////////////////////////////////////////////////////////////
 GO
 
