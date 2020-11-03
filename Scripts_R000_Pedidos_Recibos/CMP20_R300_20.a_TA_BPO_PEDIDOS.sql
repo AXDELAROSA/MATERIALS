@@ -100,15 +100,16 @@ GO
 -- //					HEADER_BPO_PEDIDO				 
 -- ////////////////////////////////////////////////////////////////
 CREATE TABLE [dbo].[HEADER_BPO_PEDIDO] (
-	[K_HEADER_PURCHASE_ORDER]				[INT] NOT NULL,
-	[K_ORDEN_COMPRA_PEDIDO]					[VARCHAR](50) NOT NULL,
+	[K_ORDEN_COMPRA_PEDIDO]					[INT] IDENTITY (1,1)	NOT NULL,	-- [VARCHAR](50) NOT NULL,
+--	[K_HEADER_PURCHASE_ORDER]				[INT] NOT NULL,
 	-- ============================
 	[K_VENDOR]								[INT] NOT NULL,
-	[K_CUSTOMER]							[INT] NOT NULL,
+	[K_CURRENCY]							[INT] NOT NULL,
 	[K_STATUS_BPO_PEDIDO]					[INT] NOT NULL DEFAULT 1,
 	-- ============================
 	[L_URGENTE]								[INT] NOT NULL DEFAULT 0,
 	[F_DATE_BPO_PEDIDO]						[DATE] NOT NULL,
+	[F_DATE_BPO_RECIBIDO]					[DATE] NULL,
 	[C_BPO_PEDIDO]							[VARCHAR](500)
 ) ON [PRIMARY]
 GO
@@ -127,13 +128,16 @@ GO
 -- //					DETAILS_BPO_PEDIDO				 
 -- ////////////////////////////////////////////////////////////////
 CREATE TABLE [dbo].[DETAILS_BPO_PEDIDO] (
-	[K_HEADER_PURCHASE_ORDER]				[INT] NOT NULL,
-	[K_ORDEN_COMPRA_PEDIDO]					[VARCHAR](50) NOT NULL,
-	-- ============================
 	[K_DETAILS_BPO_PEDIDO]					[INT] NOT NULL,
+	-- ============================
+	[K_ORDEN_COMPRA_PEDIDO]					[INT] NOT NULL,						--[VARCHAR](50) NOT NULL,
+	[K_HEADER_PURCHASE_ORDER]				[INT] NOT NULL,
 	[K_ITEM]								[INT] NOT NULL,
+--	[K_CUSTOMER]							[INT] NOT NULL,
+	[K_PO_PRICE_LOG]						[INT] NOT NULL,
 	-- ============================
 	[QUANTITY_ORDER]						[DECIMAL] (10,4) NOT NULL DEFAULT 0,
+	[QUANTITY_ORDER_ORIGINAL]				[DECIMAL] (10,4) NOT NULL DEFAULT 0,
 	-- ============================
 	[QUANTITY_RECEIVED]						[DECIMAL] (10,4) NOT NULL DEFAULT 0,
 	[QUANTITY_PENDING]						[DECIMAL] (10,4) NOT NULL DEFAULT 0,
@@ -156,11 +160,13 @@ GO
 -- ////////////////////////////////////////////////////////////////
 CREATE TABLE [dbo].[DETAILS_BPO_RECIBO] (
 	[K_DETAILS_BPO_RECIBO]					[INT] IDENTITY (1,1)	NOT NULL,
+	-- ============================
+	[K_ORDEN_COMPRA_PEDIDO]					[INT] NOT NULL,					--[VARCHAR](50) NOT NULL,
 	[K_HEADER_PURCHASE_ORDER]				[INT] NOT NULL,
-	[K_ORDEN_COMPRA_PEDIDO]					[VARCHAR](50) NOT NULL,
+	[K_ITEM]								[INT] NOT NULL,
+--	[K_CUSTOMER]							[INT] NOT NULL,
 	-- ============================
 	[K_ENTREGA]								[INT] NOT NULL DEFAULT 1,
-	[K_ITEM]								[INT] NOT NULL,
 	-- ============================
 	[QUANTITY_RECEIVED]						[DECIMAL] (10,4) NOT NULL DEFAULT 0,
 	-- ============================
