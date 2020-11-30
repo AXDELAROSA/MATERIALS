@@ -7,7 +7,8 @@
 -- // CREATION DATE:	20200926
 -- ////////////////////////////////////////////////////////////// 
 
- USE [DATA_02]
+ --USE [DATA_02]
+USE [DATA_02Pruebas]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -76,7 +77,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 	IF @VP_K_FOLIO_ORIGEN IS NULL
 	BEGIN
 		SET @VP_MENSAJE='Folio Origen no encontrado...Verifique'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 --=====================================================================================================================================
 	-- =============================================================================
@@ -107,7 +108,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 	--IF @@ROWCOUNT = 0
 	--BEGIN
 	--	SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-	--	RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+	--	RAISERROR (@VP_MENSAJE, 16, 1 )
 	--END		
 	
 --=====================================================================================================================================
@@ -136,7 +137,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 	IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 	BEGIN
 		SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 		
 	
@@ -144,8 +145,8 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 		BEGIN
 			IF @PP_CANTIDAD_MOVIMIENTO > @VP_QTY_MOVIMIENTO
 					BEGIN
-					SET @VP_MENSAJE='La cantidad movimiento no pude mayor a la cantidad disponible. ['+CONVERT(VARCHAR(10),@PP_SERIE_NO)+']'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+					SET @VP_MENSAJE='La cantidad movimiento no pude ser mayor a la cantidad disponible. ['+CONVERT(VARCHAR(10),@PP_SERIE_NO)+']'
+					RAISERROR (@VP_MENSAJE, 16, 1 )
 					END
 				ELSE
 					BEGIN
@@ -195,7 +196,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 	IF @@ROWCOUNT = 0
 	BEGIN
 		SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END		
 --=====================================================================================================================================		
 -- /////////////////////////////////////////////////////////////////////
@@ -250,7 +251,7 @@ AS
 	IF @VP_K_FOLIO_ORIGEN IS NULL
 	BEGIN
 		SET @VP_MENSAJE='Folio Origen no encontrado...Verifique'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 	
 --=====================================================================================================================================
@@ -267,23 +268,7 @@ AS
 										-- ==========================
 										--@PP_CANTIDAD_RECIBIDA,
 										@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
-	
-		--UPDATE	INVENTARIO
-		--SET		
-		--		K_FOLIO=@VP_K_FOLIO
-		--WHERE	K_ITEM					=@PP_K_ITEM
-		--AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--AND		K_ENTREGA				=@PP_K_ENTREGA
-		--AND		K_INVENTARIO			=@PP_K_INVENTARIO
-		--AND		SERIE_NO				=@PP_SERIE_NO
-		--AND		K_STATUS_INVENTARIO =	20	
-		--AND		INVENTARIO.L_BORRADO<>1
 
-		--IF @@ROWCOUNT = 0
-		--BEGIN
-		--	SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		--	RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		--END
 --=====================================================================================================================================
 		-- SE OBTIENE LA ORDEN DE COMPRA DESTINO PARA LOS LOGS
 		DECLARE @VP_K_ORDEN_TRABAJO_DESTINO		INT			
@@ -309,7 +294,7 @@ AS
 			IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 				
 			
@@ -318,7 +303,7 @@ AS
 					IF @PP_CANTIDAD_MOVIMIENTO > @VP_QTY_MOVIMIENTO
 							BEGIN
 							SET @VP_MENSAJE='La cantidad movimiento no pude mayor a la cantidad disponible. ['+CONVERT(VARCHAR(10),@PP_SERIE_NO)+']'
-							RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+							RAISERROR (@VP_MENSAJE, 16, 1 )
 							END
 						ELSE
 							BEGIN
@@ -367,7 +352,7 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 --=====================================================================================================================================		
 		--==============================================
@@ -485,22 +470,6 @@ AS
 											--@PP_CANTIDAD_RECIBIDA,
 											@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
 		END	
-	
-		--UPDATE	INVENTARIO
-		--SET		
-		--		K_FOLIO=@VP_K_FOLIO
-		--WHERE	K_ITEM					=@PP_K_ITEM
-		--AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--AND		K_ORDEN_COMPRA_PEDIDO	=@PP_K_ORDEN_COMPRA_PEDIDO
-		--AND		K_ENTREGA				=@PP_K_ENTREGA
-		--AND		K_STATUS_INVENTARIO =	20	
-		--AND		INVENTARIO.L_BORRADO<>1
-
-		--IF @@ROWCOUNT = 0
-		--BEGIN
-		--	SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		--	RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		--END
 
 --=====================================================================================================================================
 		-- SE OBTIENE LA ORDEN DE COMPRA DESTINO PARA LOS LOGS
@@ -527,7 +496,7 @@ AS
 			IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 				
 			
@@ -536,7 +505,7 @@ AS
 					IF @PP_CANTIDAD_MOVIMIENTO > @VP_QTY_MOVIMIENTO
 							BEGIN
 							SET @VP_MENSAJE='La cantidad movimiento no pude mayor a la cantidad disponible. ['+CONVERT(VARCHAR(10),@PP_SERIE_NO)+']'
-							RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+							RAISERROR (@VP_MENSAJE, 16, 1 )
 							END
 						ELSE
 							BEGIN
@@ -584,7 +553,7 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 --=====================================================================================================================================
 		
@@ -678,7 +647,7 @@ AS
 	IF @VP_K_FOLIO_ORIGEN IS NULL
 	BEGIN
 		SET @VP_MENSAJE='Folio Origen no encontrado...Verifique'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 	
 --=====================================================================================================================================
@@ -703,23 +672,6 @@ AS
 										-- ==========================
 										--@PP_CANTIDAD_RECIBIDA,
 										@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
-	
-		--UPDATE	INVENTARIO
-		--SET		
-		--		K_FOLIO=@VP_K_FOLIO
-		--WHERE	K_ITEM					=@PP_K_ITEM
-		--AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--AND		K_ENTREGA				=@PP_K_ENTREGA
-		--AND		K_INVENTARIO			=@PP_K_INVENTARIO
-		--AND		SERIE_NO				=@PP_SERIE_NO
-		--AND		K_STATUS_INVENTARIO =	20	
-		--AND		INVENTARIO.L_BORRADO<>1
-
-		--IF @@ROWCOUNT = 0
-		--BEGIN
-		--	SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		--	RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		--END
 	END
 --=====================================================================================================================================
 		-- SE OBTIENE LA ORDEN DE COMPRA DESTINO PARA LOS LOGS
@@ -746,7 +698,7 @@ AS
 			IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 				
 			
@@ -755,7 +707,7 @@ AS
 					IF @PP_CANTIDAD_MOVIMIENTO > @VP_QTY_MOVIMIENTO
 							BEGIN
 							SET @VP_MENSAJE='La cantidad movimiento no pude mayor a la cantidad disponible. ['+CONVERT(VARCHAR(10),@PP_SERIE_NO)+']'
-							RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+							RAISERROR (@VP_MENSAJE, 16, 1 )
 							END
 						ELSE
 							BEGIN
@@ -807,7 +759,7 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='No se pudó actualizar la fecha de cambio...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 
 	END
@@ -827,7 +779,7 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado [IV]...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 	END
 --=====================================================================================================================================		
@@ -877,7 +829,7 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado [FO]...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 	END
 --=====================================================================================================================================	
@@ -934,7 +886,7 @@ AS
 	IF @VP_K_FOLIO_ORIGEN IS NULL
 	BEGIN
 		SET @VP_MENSAJE='Folio Origen no encontrado...Verifique'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 	
 --=====================================================================================================================================
@@ -977,7 +929,7 @@ AS
 			IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 				
 			
@@ -986,7 +938,7 @@ AS
 					IF @PP_CANTIDAD_MOVIMIENTO > @VP_QTY_MOVIMIENTO
 							BEGIN
 							SET @VP_MENSAJE='La cantidad movimiento no pude ser mayor a la cantidad disponible. ['+CONVERT(VARCHAR(10),@PP_SERIE_NO)+']'
-							RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+							RAISERROR (@VP_MENSAJE, 16, 1 )
 							END
 						ELSE
 							BEGIN
@@ -1035,7 +987,7 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado [IV]...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 --=====================================================================================================================================		
 		--==============================================
@@ -1126,7 +1078,7 @@ AS
 	IF @VP_K_FOLIO_ORIGEN IS NULL
 	BEGIN
 		SET @VP_MENSAJE='Folio Origen no encontrado...Verifique'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 	
 --=====================================================================================================================================
@@ -1169,7 +1121,7 @@ AS
 			IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 				
 			
@@ -1178,7 +1130,7 @@ AS
 					IF @PP_CANTIDAD_MOVIMIENTO > @VP_QTY_MOVIMIENTO
 							BEGIN
 							SET @VP_MENSAJE='La cantidad movimiento no pude mayor a la cantidad disponible. ['+CONVERT(VARCHAR(10),@PP_SERIE_NO)+']'
-							RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+							RAISERROR (@VP_MENSAJE, 16, 1 )
 							END
 						ELSE
 							BEGIN
@@ -1227,7 +1179,7 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado [IV]...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 --=====================================================================================================================================		
 		--==============================================
@@ -1393,7 +1345,7 @@ BEGIN TRY
 				ELSE
 				BEGIN
 					SET @VP_MENSAJE='Movimiento no permitido, desde el botón seleccionado.[A-B]'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+					RAISERROR (@VP_MENSAJE, 16, 1 )
 				END
 			END
 			
@@ -1411,7 +1363,7 @@ BEGIN TRY
 				IF @VP_LOCACION_DESTINO_DE_FOLIO=0 OR @VP_LOCACION_DESTINO_DE_FOLIO IS NULL
 				BEGIN
 					SET @VP_MENSAJE='No se encontró locación para el FOLIO destino.[Fol-LOC]'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.				
+					RAISERROR (@VP_MENSAJE, 16, 1 )				
 				END
 
 				SELECT	@VP_FOLIO_CON_REGISTROS=COUNT(K_INVENTARIO)	
@@ -1421,12 +1373,8 @@ BEGIN TRY
 				IF @VP_FOLIO_CON_REGISTROS=0 OR @VP_FOLIO_CON_REGISTROS IS NULL
 				BEGIN
 					SET @VP_MENSAJE='No se encontró material asignado al FOLIO destino.[Fol-INV]'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.		
+					RAISERROR (@VP_MENSAJE, 16, 1 )		
 				END
-
-
-
-
 			END
 
 --			--		@PP_TIPO_ACCION_FRONT = 2		PARA MOVER DE MHI-B/A	A MQU
@@ -1446,7 +1394,7 @@ BEGIN TRY
 --				ELSE
 --				BEGIN
 --					SET @VP_MENSAJE='Movimiento no permitido, desde el botón seleccionado.[MHI-MQU]'
---					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+--					RAISERROR (@VP_MENSAJE, 16, 1 )
 --				END
 --			END
 --			
@@ -1467,7 +1415,7 @@ BEGIN TRY
 --				ELSE
 --				BEGIN
 --					SET @VP_MENSAJE='Movimiento no permitido, desde el botón seleccionado.[MQU-MHI]'
---					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+--					RAISERROR (@VP_MENSAJE, 16, 1 )
 --				END
 --			END
 --
@@ -1497,7 +1445,7 @@ BEGIN TRY
 --				ELSE
 --				BEGIN
 --					SET @VP_MENSAJE='Movimiento no permitido, desde el botón seleccionado.[MHIA-LOC]'
---					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+--					RAISERROR (@VP_MENSAJE, 16, 1 )
 --				END
 --			END
 --			
@@ -1522,7 +1470,7 @@ BEGIN TRY
 --				ELSE
 --				BEGIN
 --					SET @VP_MENSAJE='Movimiento no permitido, desde el botón seleccionado.[LOC-LOC]'
---					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+--					RAISERROR (@VP_MENSAJE, 16, 1 )
 --				END
 --			END
 --			--		@PP_TIPO_ACCION_FRONT = 6		PARA MOVER DE LOCACIÓN A MFP  (ACCION DEL BOTON SCRAP)
@@ -1556,7 +1504,7 @@ BEGIN TRY
 --				ELSE
 --				BEGIN
 --					SET @VP_MENSAJE='Movimiento no permitido, desde el botón seleccionado.[SCRAP]'
---					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+--					RAISERROR (@VP_MENSAJE, 16, 1 )
 --				END
 --			END
 

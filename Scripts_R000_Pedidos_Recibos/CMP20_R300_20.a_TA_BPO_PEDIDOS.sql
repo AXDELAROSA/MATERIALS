@@ -7,7 +7,8 @@
 -- // CREATION DATE:	20200914
 -- ////////////////////////////////////////////////////////////// 
 
-USE [COMPRAS]
+--USE [COMPRAS]
+USE [COMPRAS_Pruebas]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -162,7 +163,7 @@ CREATE TABLE [dbo].[DETAILS_BPO_RECIBO] (
 	[K_DETAILS_BPO_RECIBO]					[INT] IDENTITY (1,1)	NOT NULL,
 	-- ============================
 	[K_ORDEN_COMPRA_PEDIDO]					[INT] NOT NULL,					--[VARCHAR](50) NOT NULL,
-	[K_HEADER_PURCHASE_ORDER]				[INT] NOT NULL,
+--	[K_HEADER_PURCHASE_ORDER]				[INT] NOT NULL,
 	[K_ITEM]								[INT] NOT NULL,
 --	[K_CUSTOMER]							[INT] NOT NULL,
 	-- ============================

@@ -7,7 +7,8 @@
 -- // CREATION DATE:	20200926
 -- ////////////////////////////////////////////////////////////// 
 
- USE [DATA_02]
+ --USE [DATA_02]
+USE [DATA_02]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -29,13 +30,9 @@ CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 	-- ===========================
 	@PP_K_ITEM						INT
 AS
-	DECLARE @VP_MENSAJE				VARCHAR(300) = ''
-	DECLARE @VP_LI_N_REGISTROS		INT =5000
 	-- ///////////////////////////////////////////
 	-- =========================================		
 	-- =========================================		
-	IF @VP_MENSAJE=''
-	BEGIN
 	SELECT		DISTINCT
 				-- =============================	
 				INVENTARIO.K_FOLIO
@@ -45,7 +42,7 @@ AS
 				-- =============================	
 	FROM		INVENTARIO
 	INNER JOIN	FOLIO							ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
-	INNER JOIN	[COMPRAS].[dbo].ITEM			ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
+	INNER JOIN	COMPRAS.dbo.ITEM		ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
 	INNER JOIN	IMLOCFIL_SQL ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
 				-- =============================
 				-- =============================
@@ -53,7 +50,6 @@ AS
 	AND			INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADO
 	AND			INVENTARIO.L_BORRADO<>1
 	ORDER BY	K_FOLIO DESC
-	END
 	-- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -74,9 +70,9 @@ CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_FOLIO]
 	-- ===========================
 	@PP_K_FOLIO						INT
 AS
-	DECLARE @VP_MENSAJE				VARCHAR(300) = ''	
 	-- ///////////////////////////////////////////			
-	SELECT	K_ORDEN_COMPRA_PEDIDO
+	SELECT	TOP (5000)
+			K_ORDEN_COMPRA_PEDIDO
 			,K_ENTREGA
 			,K_ITEM
 			,LOTE_PEARL
@@ -87,8 +83,8 @@ AS
 			,SERIE_NO
 			,K_INVENTARIO
 	FROM	INVENTARIO
-	INNER JOIN FOLIO ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
-	INNER JOIN IMLOCFIL_SQL ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
+	INNER JOIN FOLIO				ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
+	INNER JOIN IMLOCFIL_SQL			ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
 	WHERE	INVENTARIO.K_FOLIO=@PP_K_FOLIO
 	AND		INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADO
 	AND		INVENTARIO.L_BORRADO<>1
@@ -111,12 +107,11 @@ CREATE PROCEDURE [dbo].[PG_LI_FOLIO_BASE]
 	-- ===========================
 	@PP_TIPO_FOLIO					VARCHAR(50)
 AS
-	DECLARE @VP_MENSAJE				VARCHAR(300) = ''
-	DECLARE @VP_LI_N_REGISTROS		INT =5000
 	-- ///////////////////////////////////////////
 	-- =========================================		
 	-- =========================================
-	SELECT	K_FOLIO	
+	SELECT	TOP(5000)
+			K_FOLIO	
 			,PART_NUMBER_ITEM_PEARL
 			,SUM(CANTIDAD_RECIBIDA)		CANTIDAD_DISPONIBLE
 	FROM	INVENTARIO
@@ -168,9 +163,9 @@ AS
 	-- =======================  
 	FROM INVENTARIO
 	-- =======================  
-	LEFT JOIN FOLIO ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
-	INNER JOIN COMPRAS.DBO.ITEM	ON	INVENTARIO.K_ITEM=ITEM.K_ITEM
-	INNER JOIN IMLOCFIL_SQL ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
+	LEFT JOIN	FOLIO						ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
+	INNER JOIN	COMPRAS.DBO.ITEM	ON INVENTARIO.K_ITEM=ITEM.K_ITEM
+	INNER JOIN	IMLOCFIL_SQL				ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
 	WHERE	INVENTARIO.L_BORRADO<>1
 	AND		K_STATUS_INVENTARIO>=20
  	AND		( @PP_K_ITEM=-1					OR	INVENTARIO.K_ITEM		=	@PP_K_ITEM )
@@ -203,7 +198,7 @@ AS
 	SELECT	TOP(1)
 			@VP_K_ITEM	=	K_ITEM
 	FROM	INVENTARIO
-	INNER JOIN FOLIO ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
+	INNER JOIN FOLIO				ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
 	WHERE	INVENTARIO.K_FOLIO=@PP_K_FOLIO
 
 	IF (@VP_K_ITEM IS NULL) OR (@VP_K_ITEM = 0)
@@ -238,69 +233,63 @@ CREATE PROCEDURE [dbo].[PG_IN_FOLIO]
 	@PP_K_FOLIO_INSERTADO					INT				OUTPUT
 AS			
 	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
-	DECLARE @VP_K_FOLIO						INT
+			,@VP_K_FOLIO					INT
 		-- /////////////////////////////////////////////////////////////////////
 		--	EL ID SE ASIGNA POR IDENTITY, OBTENER EL RESULTADO DE LA OPERACIÓN EN CASO DE REQUERIRLO.
 	-- //////////////////////////////////////////////////////////////
-	IF @VP_MENSAJE=''
-	BEGIN
 	--============================================================================
 	--======================================INSERTAR EL FOLIO
 	--============================================================================
-		INSERT INTO FOLIO
-			(	--[K_ITEM]				
-				[K_LOCACION]			
-				,[K_ORDEN_TRABAJO]		
-				,[TIPO]					
-				-- =====================
-				,[F_DATE_FOLIO]			
-				-- =====================
-				--,[CANTIDAD_RECIBIDA]		
-				-- ===========================
-				,[K_USUARIO_ALTA], [F_ALTA], [K_USUARIO_CAMBIO], [F_CAMBIO],
-				[L_BORRADO], [K_USUARIO_BAJA], [F_BAJA]  )
-		VALUES	
-			(	--@PP_K_ITEM						
-				@PP_K_LOCACION					
-				,@PP_K_ORDEN_TRABAJO				
-				,@PP_TIPO						
-				-- ===========================
-				,@PP_F_DATE_FOLIO				
-				-- ============================
-				--,@PP_CANTIDAD_RECIBIDA			
-				-- ============================
-				,@PP_K_USUARIO_ACCION, GETDATE(), @PP_K_USUARIO_ACCION, GETDATE(),
-				0, NULL, NULL  )
-						
-			IF @@ROWCOUNT = 0
-				BEGIN
-					--SET @VP_MENSAJE='The record was not inserted.'
-					SET @VP_MENSAJE='No se insertó el registro.'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-				END
-			ELSE
-				BEGIN
-					SELECT @VP_K_FOLIO=SCOPE_IDENTITY()
+	INSERT INTO FOLIO
+		(	--[K_ITEM]				
+			[K_LOCACION]			
+			,[K_ORDEN_TRABAJO]		
+			,[TIPO]					
+			-- =====================
+			,[F_DATE_FOLIO]			
+			-- =====================
+			--,[CANTIDAD_RECIBIDA]		
+			-- ===========================
+			,[K_USUARIO_ALTA], [F_ALTA], [K_USUARIO_CAMBIO], [F_CAMBIO],
+			[L_BORRADO], [K_USUARIO_BAJA], [F_BAJA]  )
+	VALUES	
+		(	--@PP_K_ITEM						
+			@PP_K_LOCACION					
+			,@PP_K_ORDEN_TRABAJO				
+			,@PP_TIPO						
+			-- ===========================
+			,@PP_F_DATE_FOLIO				
+			-- ============================
+			--,@PP_CANTIDAD_RECIBIDA			
+			-- ============================
+			,@PP_K_USUARIO_ACCION, GETDATE(), @PP_K_USUARIO_ACCION, GETDATE(),
+			0, NULL, NULL  )
+					
+		IF @@ROWCOUNT = 0
+			BEGIN
+				--SET @VP_MENSAJE='The record was not inserted.'
+				SET @VP_MENSAJE='No se insertó el registro.'
+				RAISERROR (@VP_MENSAJE, 16, 1 )
+			END
+		ELSE
+			BEGIN
+				SELECT @VP_K_FOLIO=SCOPE_IDENTITY()
 
-					IF @VP_K_FOLIO=NULL
-					BEGIN
-						--SET @VP_MENSAJE='The IDENTITY assign value was failed.'
-						SET @VP_MENSAJE='Error en la asignación de IDENTIDAD.'
-						RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-					END
+				IF @VP_K_FOLIO=NULL
+				BEGIN
+					--SET @VP_MENSAJE='The IDENTITY assign value was failed.'
+					SET @VP_MENSAJE='Error en la asignación de IDENTIDAD.'
+					RAISERROR (@VP_MENSAJE, 16, 1 )
 				END
-	END
+			END
 
-	IF (SELECT	COUNT(K_FOLIO)		FROM	INVENTARIO		WHERE	K_FOLIO=@VP_K_FOLIO) <0
+	IF (SELECT	COUNT(K_FOLIO)		FROM	INVENTARIO		WHERE	K_FOLIO=@VP_K_FOLIO) > 0
 	BEGIN
 		SET @VP_MENSAJE='El folio ya se encuentra asignado, y no puede duplicarse... Verifique [' +CONVERT(VARCHAR(10),@VP_K_FOLIO)+']'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-	END		
+		RAISERROR (@VP_MENSAJE, 16, 1 )
+	END
 
-	IF @VP_MENSAJE=''
-	BEGIN
-		SET @PP_K_FOLIO_INSERTADO=@VP_K_FOLIO
-	END	
+	SET @PP_K_FOLIO_INSERTADO=@VP_K_FOLIO
 -- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -335,47 +324,43 @@ CREATE PROCEDURE [dbo].[PG_IN_MOVIMIENTO_X_REGISTRO]
 AS			
 	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
 -- /////////////////////////////////////////////////////////////////////
-	IF @VP_MENSAJE=''
-	BEGIN
-	--============================================================================
-		INSERT INTO INVENTARIO_MOVIMIENTO_X_REGISTRO
-			(	[K_INVENTARIO]					,[K_ITEM]									
-				,[K_INVENTARIO_MOVIMIENTO_TIPO]	,[LOTE_PEARL]
-				,[SERIE_NO]
-				-- ============================	
-				,[K_LOCACION_ORIGEN]			,[K_FOLIO_ORIGEN]								
-				,[K_ORDEN_TRABAJO_ORIGEN]						
-				-- ============================	
-				,[K_LOCACION_DESTINO]			,[K_FOLIO_DESTINO]								
-				,[K_ORDEN_TRABAJO_DESTINO]						
-				-- ============================	
-				,[CANTIDAD_MOVIMIENTO]
-				-- ===========================
-				,[K_USUARIO_ALTA], [F_ALTA], [K_USUARIO_CAMBIO], [F_CAMBIO],
-				[L_BORRADO], [K_USUARIO_BAJA], [F_BAJA]  )
-		VALUES	
-			(	@PP_K_INVENTARIO						,@PP_K_ITEM								
-				,@PP_K_INVENTARIO_MOVIMIENTO_TIPO		,@PP_LOTE_PEARL	
-				,@PP_SERIE_NO						
-				-- ============================	
-				,@PP_K_LOCACION_ORIGEN					,@PP_K_FOLIO_ORIGEN						
-				,@PP_K_ORDEN_TRABAJO_ORIGEN				
-				-- ============================	
-				,@PP_K_LOCACION_DESTINO					,@PP_K_FOLIO_DESTINO						
-				,@PP_K_ORDEN_TRABAJO_DESTINO				
-				-- ============================	
-				,@PP_CANTIDAD_MOVIMIENTO				
-				-- ============================
-				,@PP_K_USUARIO_ACCION, GETDATE(), @PP_K_USUARIO_ACCION, GETDATE(),
-				0, NULL, NULL  )
+--============================================================================
+	INSERT INTO INVENTARIO_MOVIMIENTO_X_REGISTRO
+		(	[K_INVENTARIO]					,[K_ITEM]									
+			,[K_INVENTARIO_MOVIMIENTO_TIPO]	,[LOTE_PEARL]
+			,[SERIE_NO]
+			-- ============================	
+			,[K_LOCACION_ORIGEN]			,[K_FOLIO_ORIGEN]								
+			,[K_ORDEN_TRABAJO_ORIGEN]						
+			-- ============================	
+			,[K_LOCACION_DESTINO]			,[K_FOLIO_DESTINO]								
+			,[K_ORDEN_TRABAJO_DESTINO]						
+			-- ============================	
+			,[CANTIDAD_MOVIMIENTO]
+			-- ===========================
+			,[K_USUARIO_ALTA], [F_ALTA], [K_USUARIO_CAMBIO], [F_CAMBIO],
+			[L_BORRADO], [K_USUARIO_BAJA], [F_BAJA]  )
+	VALUES	
+		(	@PP_K_INVENTARIO						,@PP_K_ITEM								
+			,@PP_K_INVENTARIO_MOVIMIENTO_TIPO		,@PP_LOTE_PEARL	
+			,@PP_SERIE_NO						
+			-- ============================	
+			,@PP_K_LOCACION_ORIGEN					,@PP_K_FOLIO_ORIGEN						
+			,@PP_K_ORDEN_TRABAJO_ORIGEN				
+			-- ============================	
+			,@PP_K_LOCACION_DESTINO					,@PP_K_FOLIO_DESTINO						
+			,@PP_K_ORDEN_TRABAJO_DESTINO				
+			-- ============================	
+			,@PP_CANTIDAD_MOVIMIENTO				
+			-- ============================
+			,@PP_K_USUARIO_ACCION, GETDATE(), @PP_K_USUARIO_ACCION, GETDATE(),
+			0, NULL, NULL  )
 
-			IF @@ROWCOUNT = 0
-				BEGIN
-					SET @VP_MENSAJE='El movimiento x registro no fue insertado...Verifique ['+CONVERT(VARCHAR(10),@PP_K_INVENTARIO)+']'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-				END				
-	END
-	
+		IF @@ROWCOUNT = 0
+		BEGIN
+			SET @VP_MENSAJE='El movimiento x registro no fue insertado...Verifique ['+CONVERT(VARCHAR(10),@PP_K_INVENTARIO)+']'
+			RAISERROR (@VP_MENSAJE, 16, 1 )
+		END
 -- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -404,7 +389,6 @@ CREATE PROCEDURE [dbo].[PG_IN_CURSOR_MOVIMIENTO_X_REGISTRO]
 	@PP_K_ORDEN_TRABAJO_DESTINO				[INT],
 	@PP_K_INVENTARIO_MOVIMIENTO_TIPO		[INT]
 AS			
-	DECLARE @VP_MENSAJE						VARCHAR(500) = ''
 -- /////////////////////////////////////////////////////////////////////
 	DECLARE	 @VP_CU_K_INVENTARIO					INT
 			,@VP_CU_CANTIDAD_MOVIMIENTO				DECIMAL (19,4)
@@ -504,13 +488,11 @@ AS
 			AND		INVENTARIO.L_BORRADO<>1				)	>0	
 	BEGIN
 		SET @VP_MENSAJE='La serie ['+ @PP_SERIE_NO	+'] ya fue ingresada.'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
-	
-	IF @VP_MENSAJE=''
-	BEGIN
+	-- /////////////////////////////////////////////////////////////////////	
 	--	PRIMERO BUSCAR EN INVENTARIO SI HAY UN K_LOCACION=4 Y TIPO 'B' ASIGNADO AL ITEM
-	SET @VP_K_FOLIO= ISNULL(	(SELECT TOP(1)	--*,
+	SET @VP_K_FOLIO= ISNULL(	(SELECT TOP(1)
 										INVENTARIO.K_FOLIO
 								FROM	INVENTARIO
 								INNER JOIN FOLIO	ON	INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
@@ -520,29 +502,45 @@ AS
 								AND		INVENTARIO.L_BORRADO<>1
 								ORDER BY K_FOLIO DESC),0)
 
+		-- SI NO SE ENCUENTRA EL FOLIO SE LE ASIGNA UNO NUEVO.
 		IF @VP_K_FOLIO=0
 		BEGIN
-			--============================================================================
-			--	REALIZA EL INSERT PARA OBTENER EL FOLIO ASIGNADO AL INGRESAR A INVENTARIO.
-			EXECUTE [dbo].[PG_IN_FOLIO]		@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION,
-											-- ===========================
-											--@PP_K_ITEM,		
-											4,	--@PP_K_LOCACION,	[A4GLIdentity]=4 (MHI)		DE: {[DATA_02].[dbo].[IMLOCFIL_SQL]}
-											0,	--@PP_K_ORDEN_TRABAJO,	DEFAULT=0
-											'B',--@PP_TIPO, 
-											-- =========================
-											@PP_F_DATE_INVENTARIO,--@PP_F_DATE_FOLIO,
-											-- ==========================
-											--@PP_CANTIDAD_RECIBIDA,
-											@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
-		END
-	END
 
+			--	SE BUSCA LA EXISTENCIA DEL FOLIO BASE PARA EL ITEM.			
+			SELECT	@VP_K_FOLIO		= K_FOLIO
+			FROM	FOLIO
+			WHERE	K_ITEM_BASE		= @PP_K_ITEM
+
+				IF @VP_K_FOLIO=0
+				BEGIN
+					--============================================================================
+					--	REALIZA EL INSERT PARA OBTENER EL FOLIO ASIGNADO AL INGRESAR A INVENTARIO.
+					EXECUTE [dbo].[PG_IN_FOLIO]		@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION,
+													-- ===========================
+													--@PP_K_ITEM,		
+													4,	--@PP_K_LOCACION,	[A4GLIdentity]=4 (MHI)		DE: {[DATA_02].[dbo].[IMLOCFIL_SQL]}
+													0,	--@PP_K_ORDEN_TRABAJO,	DEFAULT=0
+													'B',--@PP_TIPO, 
+													-- =========================
+													@PP_F_DATE_INVENTARIO,--@PP_F_DATE_FOLIO,
+													-- ==========================
+													--@PP_CANTIDAD_RECIBIDA,
+													@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
+
+					UPDATE	FOLIO
+					SET		K_ITEM_BASE	= @PP_K_ITEM
+					WHERE	K_FOLIO		= @VP_K_FOLIO
+					
+					IF @@ROWCOUNT = 0
+					BEGIN
+						SET @VP_MENSAJE='El folio de Almacen no fue asignado, [' + CONVERT(VARCHAR(50),@VP_K_FOLIO) + ']'
+						RAISERROR (@VP_MENSAJE, 16, 1 )
+					END				
+				END
+		END
 	-- /////////////////////////////////////////////////////////////////////
 	--	EL ID SE ASIGNA POR IDENTITY, OBTENER EL RESULTADO DE LA OPERACIÓN EN CASO DE REQUERIRLO.
 	-- //////////////////////////////////////////////////////////////
-	IF @VP_MENSAJE=''
-	BEGIN
 	--============================================================================
 	--======================================INSERTAR EL INVENTARIO
 	--============================================================================
@@ -584,7 +582,7 @@ AS
 			IF @@ROWCOUNT = 0
 				BEGIN
 					SET @VP_MENSAJE='El registro no fue Insertado.'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+					RAISERROR (@VP_MENSAJE, 16, 1 )
 				END				
 			ELSE
 				BEGIN
@@ -594,13 +592,13 @@ AS
 					BEGIN
 						--SET @VP_MENSAJE='The IDENTITY assign value was failed.'
 						SET @VP_MENSAJE='Error en la asignación de IDENTIDAD [INV].'
-						RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+						RAISERROR (@VP_MENSAJE, 16, 1 )
 					END
 				END
-	END
 	
-	IF @VP_MENSAJE=''
-	BEGIN
+	-- /////////////////////////////////////////////////////////////////////
+	--	INSERTAR LOS MOVIMIENTOS POR REGISTRO
+	-- //////////////////////////////////////////////////////////////	
 	EXECUTE [dbo].[PG_IN_MOVIMIENTO_X_REGISTRO]	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
 												-- ===========================
 												,@VP_K_INVENTARIO					,@PP_K_ITEM						
@@ -614,7 +612,6 @@ AS
 												,0														--	K_ORDEN_TRABAJO_ORIGEN
 												-- ============================	
 												,@PP_CANTIDAD_RECIBIDA			
-	END
 -- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -665,7 +662,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 		IF @@ROWCOUNT = 0
 			BEGIN
 				SET @VP_MENSAJE='El movimiento locación no fue insertado.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 -- //////////////////////////////////////////////////////////////
 GO
@@ -708,7 +705,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 			IF @@ROWCOUNT = 0
 			BEGIN
 				SET @VP_MENSAJE='El movimiento locación no fue actualizado.[S# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 	END
 	ELSE IF @PP_SUMA_O_RESTA='RESTAR'
@@ -725,7 +722,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 			IF @@ROWCOUNT = 0
 			BEGIN
 				SET @VP_MENSAJE='El movimiento locación no fue actualizado.[R# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 
 
@@ -736,7 +733,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 					AND		LOTE_PEARL	=@PP_LOTE_PEARL	)		<	0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad disponible no puede ser menor a 0.[R# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 	END
 -- //////////////////////////////////////////////////////////////
@@ -842,7 +839,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 			IF @@ROWCOUNT = 0
 				BEGIN
 					SET @VP_MENSAJE='[TRX] no insertada.'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+					RAISERROR (@VP_MENSAJE, 16, 1 )
 				END				
 	-- //////////////////////////////////////////////////////////////
 GO
@@ -871,7 +868,7 @@ AS
 	IF @VP_MAX_MIN_X_ITEM<=0
 	BEGIN
 		SET @VP_MENSAJE='El [ITEM] #'+CONVERT(VARCHAR(10),@PP_K_ITEM)+ ', no tiene un registro de Mínimos/Máximos en el sistema. Verificar...'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 GO
 
@@ -903,7 +900,7 @@ AS
 				AND		INVENTARIO.L_BORRADO<>1									)	>	1
 	BEGIN
 		SET @VP_MENSAJE='Dos o más Folios seleccionados.'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END				
 GO
 
@@ -940,12 +937,12 @@ DECLARE @VP_MENSAJE		VARCHAR(500)=''
 	IF @VP_ESTATUS_ACTUAL IS NULL
 	BEGIN
 		SET @VP_MENSAJE='El registro no fue encontrado.'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 	ELSE IF @VP_ESTATUS_ACTUAL<> 10
 	BEGIN
 		SET @VP_MENSAJE='El registro no puede ser modificado.'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 	ELSE
 	BEGIN
@@ -961,7 +958,7 @@ DECLARE @VP_MENSAJE		VARCHAR(500)=''
 			IF @@ROWCOUNT = 0
 			BEGIN
 				SET @VP_MENSAJE='El movimiento no fue modificado.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 	END
 
@@ -1026,7 +1023,7 @@ AS
 			IF (@VP_QTY_MOVIMIENTO IS NULL) OR (@VP_QTY_MOVIMIENTO=0)
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 --=====================================================================================================================================
 --=====================================================================================================================================
@@ -1154,24 +1151,7 @@ AS
 										-- ==========================
 										--@PP_CANTIDAD_RECIBIDA,
 										@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
-	
-		--UPDATE	INVENTARIO
-		--SET		
-		--		K_FOLIO=@VP_K_FOLIO
-		--WHERE	K_ITEM					=@PP_K_ITEM
-		--AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--AND		K_ORDEN_COMPRA_PEDIDO	=@PP_K_ORDEN_COMPRA_PEDIDO
-		--AND		K_ENTREGA				=@PP_K_ENTREGA
-		--AND		K_STATUS_INVENTARIO =	10	
-		--AND		INVENTARIO.L_BORRADO<>1
-
-		--IF @@ROWCOUNT = 0
-		--BEGIN
-		--	SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		--	RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		--END
-
---=====================================================================================================================================
+	--=====================================================================================================================================
 		-- SE OBTIENE LA ORDEN DE COMPRA DESTINO PARA LOS LOGS
 		DECLARE @VP_K_ORDEN_TRABAJO_DESTINO		INT			
 		SELECT	@VP_K_ORDEN_TRABAJO_DESTINO=K_ORDEN_TRABAJO
@@ -1198,7 +1178,7 @@ AS
 			IF (@VP_QTY_MOVIMIENTO IS NULL) OR (@VP_QTY_MOVIMIENTO=0)
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 --=====================================================================================================================================
 		--- SE HACE EL INSERT EN LA TABLA INVENTARIO_MOVIMIENTO
@@ -1267,7 +1247,7 @@ AS
 	IF @@ROWCOUNT = 0
 	BEGIN
 		SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+		RAISERROR (@VP_MENSAJE, 16, 1 )
 	END
 --=====================================================================================================================================	
 	-- SE ACTUALIZA EL ESTATUS DE LA TABLA INVENTARIO DEL MATERIAL QUE HA SIDO INSPECCIONADO.
@@ -1354,33 +1334,6 @@ AS
 											--@PP_CANTIDAD_RECIBIDA,
 											@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
 		END	
-	
-		--UPDATE	INVENTARIO
-		--SET		
-		--		K_FOLIO=@VP_K_FOLIO
-		--WHERE	K_ITEM					=@PP_K_ITEM
-		--AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--AND		K_ORDEN_COMPRA_PEDIDO	=@PP_K_ORDEN_COMPRA_PEDIDO
-		--AND		K_ENTREGA				=@PP_K_ENTREGA
-		--AND		K_STATUS_INVENTARIO =	20	
-		--AND		INVENTARIO.L_BORRADO<>1
-		--AND		K_INVENTARIO IN	(
-		--							SELECT	K_INVENTARIO
-		--							FROM	INVENTARIO
-		--							INNER JOIN FOLIO ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
-		--							WHERE	K_ITEM					=@PP_K_ITEM
-		--							AND		K_LOCACION				=@PP_K_LOCACION_ORIGEN
-		--							AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--							AND		K_ORDEN_COMPRA_PEDIDO	=@PP_K_ORDEN_COMPRA_PEDIDO
-		--							AND		K_ENTREGA				=@PP_K_ENTREGA
-		--							AND		K_STATUS_INVENTARIO		=20
-		--							AND		INVENTARIO.L_BORRADO<>1						)
-
-		--IF @@ROWCOUNT = 0
-		--BEGIN
-		--	SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		--	RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		--END
 
 --=====================================================================================================================================
 		-- SE OBTIENE LA ORDEN DE COMPRA DESTINO PARA LOS LOGS
@@ -1418,7 +1371,7 @@ AS
 			IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 --=====================================================================================================================================
 		--- SE HACE EL INSERT EN LA TABLA INVENTARIO_MOVIMIENTO
@@ -1468,11 +1421,9 @@ AS
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
-
 --=====================================================================================================================================
-		
 		--==============================================
 		-- VERIFICAMOS SI EXISTE UN REGISTRO DEL K_ITEM
 		--==============================================
@@ -1509,11 +1460,6 @@ AS
 													,'RESTAR'
 --=====================================================================================================================================
 --=====================================================================================================================================	
-	-- VERIFICA QUE NO VENGAN DOS FOLIOS POR LOTE
-	--EXECUTE [dbo].[PG_SK_FOLIO_NO_DOBLE]	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
-	--										-- ===========================
-	--										,@PP_K_ORDEN_COMPRA_PEDIDO		,@PP_K_ENTREGA			
-	--										,@PP_K_ITEM						,@PP_LOTE_PEARL
 -- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -1571,34 +1517,6 @@ AS
 										-- ==========================
 										--@PP_CANTIDAD_RECIBIDA,
 										@PP_K_FOLIO_INSERTADO	= @VP_K_FOLIO	OUTPUT
-	
-		--UPDATE	INVENTARIO
-		--SET		
-		--		K_FOLIO=@VP_K_FOLIO
-		--WHERE	K_ITEM					=@PP_K_ITEM
-		--AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--AND		K_ORDEN_COMPRA_PEDIDO	=@PP_K_ORDEN_COMPRA_PEDIDO
-		--AND		K_ENTREGA				=@PP_K_ENTREGA
-		--AND		K_STATUS_INVENTARIO		=20
-		--AND		INVENTARIO.L_BORRADO<>1
-		--AND		K_INVENTARIO IN (
-		--							SELECT	K_INVENTARIO
-		--							FROM	INVENTARIO
-		--							INNER JOIN FOLIO ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
-		--							WHERE	K_ITEM					=@PP_K_ITEM
-		--							AND		K_LOCACION				=@PP_K_LOCACION_ORIGEN
-		--							AND		LOTE_PEARL				=@PP_LOTE_PEARL
-		--							AND		K_ORDEN_COMPRA_PEDIDO	=@PP_K_ORDEN_COMPRA_PEDIDO
-		--							AND		K_ENTREGA				=@PP_K_ENTREGA
-		--							AND		K_STATUS_INVENTARIO		=20
-		--							AND		INVENTARIO.L_BORRADO<>1				)
-
-
-		--IF @@ROWCOUNT = 0
-		--BEGIN
-		--	SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-		--	RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
-		--END
 --=====================================================================================================================================
 		-- SE OBTIENE LA ORDEN DE COMPRA DESTINO PARA LOS LOGS
 		DECLARE @VP_K_ORDEN_TRABAJO_DESTINO		INT			
@@ -1635,9 +1553,8 @@ AS
 			IF @VP_QTY_MOVIMIENTO IS NULL OR @VP_QTY_MOVIMIENTO=0
 			BEGIN
 				SET @VP_MENSAJE='La cantidad movimiento no pude ser nula o menor a 0.'
-				RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
-
 --=====================================================================================================================================
 		--- SE HACE EL INSERT EN LA TABLA INVENTARIO_MOVIMIENTO
 		EXECUTE [dbo].[PG_IN_MOVIMIENTO_INVENTARIO]	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
@@ -1650,7 +1567,6 @@ AS
 												,@VP_QTY_MOVIMIENTO	
 												,20
 
-
 		--	PARA OBTENER LOS DATOS DEL DESTINO PARA EL LOG DE MOVIMIENTO X REGISTRO	
 		EXECUTE [dbo].[PG_IN_CURSOR_MOVIMIENTO_X_REGISTRO]	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
 															,@PP_K_ORDEN_COMPRA_PEDIDO		,@PP_K_ITEM						
@@ -1660,7 +1576,6 @@ AS
 															,@PP_K_LOCACION_DESTINO			,@VP_K_FOLIO
 															,@VP_K_ORDEN_TRABAJO_DESTINO
 															,20	--@PP_K_INVENTARIO_MOVIMIENTO_TIPO
-
 --=====================================================================================================================================
 		UPDATE	INVENTARIO
 		SET		
@@ -1682,12 +1597,10 @@ AS
 									AND		K_ENTREGA				=@PP_K_ENTREGA
 									AND		K_STATUS_INVENTARIO		=20
 									AND		INVENTARIO.L_BORRADO<>1				)
-
-
 		IF @@ROWCOUNT = 0
 		BEGIN
 			SET @VP_MENSAJE='El Folio no puede ser actualizado...Verificar'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 --=====================================================================================================================================		
 		--==============================================
@@ -1726,11 +1639,6 @@ AS
 													,'RESTAR'
 --=====================================================================================================================================
 --=====================================================================================================================================	
-	-- VERIFICA QUE NO VENGAN DOS FOLIOS POR LOTE
-	--EXECUTE [dbo].[PG_SK_FOLIO_NO_DOBLE]	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION
-	--										-- ===========================
-	--										,@PP_K_ORDEN_COMPRA_PEDIDO		,@PP_K_ENTREGA			
-	--										,@PP_K_ITEM						,@PP_LOTE_PEARL
 -- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -1785,7 +1693,7 @@ BEGIN TRY
 			ELSE
 				BEGIN
 					SET @VP_MENSAJE='Movimiento no permitido desde la locación seleccionada...Verifique'
-					RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+					RAISERROR (@VP_MENSAJE, 16, 1 )
 				END
 		END
 	ELSE IF @PP_K_LOCACION_ORIGEN=4
@@ -1805,7 +1713,7 @@ BEGIN TRY
 	ELSE
 		BEGIN
 			SET @VP_MENSAJE='Movimiento no permitido desde la locación seleccionada...Verifique'
-			RAISERROR (@VP_MENSAJE, 16, 1 ) --MENSAJE - Severity -State.
+			RAISERROR (@VP_MENSAJE, 16, 1 )
 		END
 
 --=====================================================================================================================================
