@@ -7,8 +7,8 @@
 -- // CREATION DATE:	20200926
 -- ////////////////////////////////////////////////////////////// 
 
- --USE [DATA_02]
-USE [DATA_02]
+USE [DATA_02pruebas]
+--USE [DATA_02]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -23,7 +23,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_LI_
 	DROP PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 GO
 --		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 0,139,  82
---		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 0,139,  458
+--		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 0,139,  70
 CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
@@ -32,16 +32,43 @@ CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 AS
 	-- ///////////////////////////////////////////
 	-- =========================================		
-	-- =========================================		
+	-- =========================================
+IF @PP_K_SISTEMA_EXE = 0 
+BEGIN
 	SELECT		DISTINCT
 				-- =============================	
 				INVENTARIO.K_FOLIO
 				,FOLIO.TIPO
-				,LOC
+				,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
+					ELSE	LOC	END
+				 ) AS	LOC
 				,K_LOCACION
+				,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
 				-- =============================	
 	FROM		INVENTARIO
 	INNER JOIN	FOLIO							ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
+	INNER JOIN	COMPRAS_Pruebas.dbo.ITEM		ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
+	INNER JOIN	IMLOCFIL_SQL ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
+				-- =============================
+				-- =============================
+	WHERE		INVENTARIO.K_ITEM=@PP_K_ITEM
+	AND			INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADO
+	AND			INVENTARIO.L_BORRADO<>1
+	ORDER BY	K_FOLIO DESC
+END
+ELSE
+BEGIN
+	SELECT		DISTINCT
+				-- =============================	
+				INVENTARIO.K_FOLIO
+				,FOLIO.TIPO
+				,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
+					ELSE	LOC	END
+				 ) AS	LOC
+				,K_LOCACION
+				-- =============================	
+	FROM		INVENTARIO
+	INNER JOIN	FOLIO					ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
 	INNER JOIN	COMPRAS.dbo.ITEM		ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
 	INNER JOIN	IMLOCFIL_SQL ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
 				-- =============================
@@ -50,6 +77,7 @@ AS
 	AND			INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADO
 	AND			INVENTARIO.L_BORRADO<>1
 	ORDER BY	K_FOLIO DESC
+END
 	-- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -63,7 +91,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_LI_
 	DROP PROCEDURE [dbo].[PG_LI_INVENTARIO_X_FOLIO]
 GO
 --		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_FOLIO] 0,139,3
---		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_FOLIO] 0,139,9
+--		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_FOLIO] 0,139,5
 CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_FOLIO]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
@@ -100,7 +128,7 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_LI_FOLIO_BASE]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_LI_FOLIO_BASE]
 GO
---		 EXECUTE [dbo].[PG_LI_FOLIO_BASE] 0,139,'A'
+--		 EXECUTE [dbo].[PG_LI_FOLIO_BASE] 0,139,'B'
 CREATE PROCEDURE [dbo].[PG_LI_FOLIO_BASE]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
@@ -110,6 +138,26 @@ AS
 	-- ///////////////////////////////////////////
 	-- =========================================		
 	-- =========================================
+IF @PP_K_SISTEMA_EXE = 0 
+BEGIN
+	SELECT	TOP(5000)
+			K_FOLIO	
+			,PART_NUMBER_ITEM_PEARL
+			,SUM(CANTIDAD_RECIBIDA)		CANTIDAD_DISPONIBLE
+	FROM	INVENTARIO
+	INNER JOIN COMPRAS_Pruebas.DBO.ITEM	ON	INVENTARIO.K_ITEM=ITEM.K_ITEM
+	WHERE	K_FOLIO IN (
+						SELECT	K_FOLIO
+						FROM	FOLIO
+						WHERE	K_LOCACION=4
+						AND		TIPO=@PP_TIPO_FOLIO
+						)
+	AND		INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADOAND
+	AND		INVENTARIO.L_BORRADO<>1
+	GROUP BY	K_FOLIO, PART_NUMBER_ITEM_PEARL
+END
+ELSE
+BEGIN
 	SELECT	TOP(5000)
 			K_FOLIO	
 			,PART_NUMBER_ITEM_PEARL
@@ -125,6 +173,7 @@ AS
 	AND		INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADOAND
 	AND		INVENTARIO.L_BORRADO<>1
 	GROUP BY	K_FOLIO, PART_NUMBER_ITEM_PEARL
+END
 -- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -149,6 +198,35 @@ CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_BUSCAR_X_PARAMETROS]
 AS    
  -- ///////////////////////////////////////////  
  -- ///////////////////////////////////////////  
+IF @PP_K_SISTEMA_EXE = 0 
+BEGIN
+	SELECT  DISTINCT  
+	  ISNULL(INVENTARIO.K_ITEM, '')			AS K_ITEM
+	  ,ISNULL(PART_NUMBER_ITEM_PEARL, '')	AS PART_NUMBER_ITEM_PEARL
+	  ,ISNULL(LOTE_PEARL, '')				AS LOTE_PEARL
+	  ,ISNULL(SERIE_NO, '')					AS SERIE_NO
+	  ,ISNULL(CANTIDAD_RECIBIDA, '')		AS CANTIDAD_RECIBIDA
+	  ,ISNULL(INVENTARIO.K_FOLIO, 0)		AS K_FOLIO
+	  -- =======================  
+	  ,ISNULL(K_LOCACION, '')				AS K_LOCACION
+	  ,ISNULL(LOC, '')						AS LOC
+	  ,ISNULL(K_ORDEN_TRABAJO, '')			AS K_ORDEN_TRABAJO
+	-- =======================  
+	FROM INVENTARIO
+	-- =======================  
+	LEFT JOIN	FOLIO						ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
+	INNER JOIN	COMPRAS_Pruebas.DBO.ITEM	ON INVENTARIO.K_ITEM=ITEM.K_ITEM
+	INNER JOIN	IMLOCFIL_SQL				ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
+	WHERE	INVENTARIO.L_BORRADO<>1
+	AND		K_STATUS_INVENTARIO>=20
+ 	AND		( @PP_K_ITEM=-1					OR	INVENTARIO.K_ITEM		=	@PP_K_ITEM )
+ 	AND		( @PP_K_LOTE=-1					OR	INVENTARIO.LOTE_PEARL	=	@PP_K_LOTE )
+	AND		( @PP_K_FOLIO=-1				OR	INVENTARIO.K_FOLIO		=	@PP_K_FOLIO )
+	AND		( @PP_SERIE_NO=''				OR	INVENTARIO.SERIE_NO		=	@PP_SERIE_NO )
+	AND		( @PP_K_ORDEN=-1				OR	FOLIO.K_ORDEN_TRABAJO	=	@PP_K_ORDEN )
+END
+ELSE
+BEGIN
 	SELECT  DISTINCT  
 	  ISNULL(INVENTARIO.K_ITEM, '')			AS K_ITEM
 	  ,ISNULL(PART_NUMBER_ITEM_PEARL, '')	AS PART_NUMBER_ITEM_PEARL
@@ -173,6 +251,7 @@ AS
 	AND		( @PP_K_FOLIO=-1				OR	INVENTARIO.K_FOLIO		=	@PP_K_FOLIO )
 	AND		( @PP_SERIE_NO=''				OR	INVENTARIO.SERIE_NO		=	@PP_SERIE_NO )
 	AND		( @PP_K_ORDEN=-1				OR	FOLIO.K_ORDEN_TRABAJO	=	@PP_K_ORDEN )
+END
 -- /////////////////////////////////////////////////////////////////////
 GO
 
@@ -185,7 +264,7 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_SK_ITEM_X_FOLIO]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_SK_ITEM_X_FOLIO]
 GO
---		 EXECUTE [dbo].[PG_SK_ITEM_X_FOLIO] 0,139,1
+--		 EXECUTE [dbo].[PG_SK_ITEM_X_FOLIO] 0,139,2
 CREATE PROCEDURE [dbo].[PG_SK_ITEM_X_FOLIO]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
@@ -207,6 +286,39 @@ AS
 	END
 				
 	SELECT @VP_K_ITEM AS K_ITEM	, @VP_MENSAJE	AS MENSAJE
+	-- ////////////////////////////////////////////////////////////////////
+GO
+
+-- //////////////////////////////////////////////////////////////
+-- // STORED PROCEDURE ---> SELECT / FICHA
+-- //	VERIFICA LA LOCACIÓN DEL FOLIO
+-- //////////////////////////////////////////////////////////////
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_SK_LOCACION_DEL_FOLIO]') AND type in (N'P', N'PC'))
+	DROP PROCEDURE [dbo].[PG_SK_LOCACION_DEL_FOLIO]
+GO
+--		 EXECUTE [dbo].[PG_SK_LOCACION_DEL_FOLIO] 0,139,2
+CREATE PROCEDURE [dbo].[PG_SK_LOCACION_DEL_FOLIO]
+	@PP_K_SISTEMA_EXE				INT,
+	@PP_K_USUARIO_ACCION			INT,
+	-- ===========================
+	@PP_K_FOLIO						INT
+AS
+	DECLARE @VP_MENSAJE				VARCHAR(300) = ''	
+			,@VP_K_LOCACION			INT
+	-- ///////////////////////////////////////////			
+	SELECT	TOP(1)
+			@VP_K_LOCACION	=	K_LOCACION
+--			K_LOCACION
+	FROM	FOLIO
+	WHERE	K_FOLIO=@PP_K_FOLIO
+
+	IF (@VP_K_LOCACION IS NULL) OR (@VP_K_LOCACION = 0)
+	BEGIN
+		SET @VP_MENSAJE='Locación del [FOLIO] no encontrada...Verifique ['+CONVERT(VARCHAR(10),@PP_K_FOLIO)+']'
+		SET @VP_K_LOCACION = 0
+	END
+				
+	SELECT @VP_K_LOCACION AS K_LOCACION	, @VP_MENSAJE	AS MENSAJE
 	-- ////////////////////////////////////////////////////////////////////
 GO
 
@@ -704,7 +816,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 
 			IF @@ROWCOUNT = 0
 			BEGIN
-				SET @VP_MENSAJE='El movimiento locación no fue actualizado.[S# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
+				SET @VP_MENSAJE='El movimiento locación no fue actualizado.[SUM# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
 				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 	END
@@ -721,7 +833,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 			
 			IF @@ROWCOUNT = 0
 			BEGIN
-				SET @VP_MENSAJE='El movimiento locación no fue actualizado.[R# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
+				SET @VP_MENSAJE='El movimiento locación no fue actualizado.[RST# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
 				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 
@@ -732,7 +844,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 					AND		K_LOCACION	=@PP_K_LOCACION
 					AND		LOTE_PEARL	=@PP_LOTE_PEARL	)		<	0
 			BEGIN
-				SET @VP_MENSAJE='La cantidad disponible no puede ser menor a 0.[R# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
+				SET @VP_MENSAJE='La cantidad disponible no puede ser menor a 0.[RST# '+CONVERT(VARCHAR(10),@PP_K_LOCACION)+']'
 				RAISERROR (@VP_MENSAJE, 16, 1 )
 			END
 	END
@@ -791,7 +903,7 @@ DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 							AND		LOTE_PEARL	=@PP_LOTE_PEARL				),0)
 													
 	--==============================================
-	--	REALIZA EL INSERT EN LA TABLA DE INVENTARIO_LOCACION
+	--	REALIZA EL INSERT EN LA TABLA DE INVENTARIO_MOVIMIENTO
 	--==============================================				
 		--============================================================================
 		--======================================INSERTAR EL MOVIMIENTO_INVENTARIO
@@ -861,9 +973,18 @@ AS
 	DECLARE @VP_MENSAJE					VARCHAR(500) = ''
 			,@VP_MAX_MIN_X_ITEM			DECIMAL(19,4)
 
+IF @PP_K_SISTEMA_EXE = 0
+BEGIN
+	SET	@VP_MAX_MIN_X_ITEM			= ISNULL((	SELECT	CANTIDAD_MINIMA
+												FROM	COMPRAS_Pruebas.dbo.ITEM
+												WHERE	K_ITEM=@PP_K_ITEM	),-1)
+END
+ELSE
+BEGIN
 	SET	@VP_MAX_MIN_X_ITEM			= ISNULL((	SELECT	CANTIDAD_MINIMA
 												FROM	COMPRAS.dbo.ITEM
 												WHERE	K_ITEM=@PP_K_ITEM	),-1)
+END
 	
 	IF @VP_MAX_MIN_X_ITEM<=0
 	BEGIN
@@ -973,6 +1094,38 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_IN_MOVIMIENTO_A_MHI]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_IN_MOVIMIENTO_A_MHI]
 GO
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 1,1,70,40001,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 1,1,70,40002,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 1,2,70,40002,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 1,2,70,40003,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 1,3,70,40001,4,4
+
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,1,67,20001,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,1,67,20002,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,8,67,20003,4,4
+
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,2,69,30001,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,2,69,30002,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,2,69,30003,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,3,69,30004,4,4
+
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,4,69,30001,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,4,69,30005,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,4,69,30006,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,4,69,30007,4,4
+
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,9,69,30001,4,4
+
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,5,82,50001,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,6,82,50002,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 2,7,82,50003,4,4
+
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 3,1,459,130001,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 3,1,459,130002,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 3,2,459,130003,4,4
+--		 EXECUTE [dbo].[PG_IN_MOVIMIENTO_A_MHI] 0,139, 3,3,459,130004,4,4
+
+
 
 CREATE PROCEDURE [dbo].[PG_IN_MOVIMIENTO_A_MHI]
 	@PP_K_SISTEMA_EXE				INT,

@@ -7,8 +7,8 @@
 -- // CREATION DATE:	20200914
 -- ////////////////////////////////////////////////////////////// 
 
+--USE [COMPRAS_Pruebas]
 --USE [COMPRAS]
-USE [COMPRAS]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -214,7 +214,8 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_SK_DETAILS_BPO_ITEMS]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_SK_DETAILS_BPO_ITEMS]
 GO
---			   EXECUTE [PG_SK_DETAILS_BPO_ITEMS] 0,139,  107,82
+--			   EXECUTE [PG_SK_DETAILS_BPO_ITEMS] 0,139,  164,458
+--			   EXECUTE [PG_SK_DETAILS_BPO_ITEMS] 0,139,  615,336
 CREATE PROCEDURE [dbo].[PG_SK_DETAILS_BPO_ITEMS]
 	@PP_K_SISTEMA_EXE				INT,
 	@PP_K_USUARIO_ACCION			INT,
@@ -249,6 +250,7 @@ AS
 		INNER JOIN	BD_GENERAL.DBO.UNIT_OF_MEASURE	ON ITEM.K_UNIT_OF_ITEM=UNIT_OF_MEASURE.K_UNIT_OF_MEASURE
 					-- =============================
 		WHERE		DETAILS_PURCHASE_ORDER.K_HEADER_PURCHASE_ORDER=@PP_K_HEADER_PURCHASE_ORDER
+		AND			DETAILS_PURCHASE_ORDER.K_ITEM = @PP_K_ITEM
 		AND			HEADER_PURCHASE_ORDER.L_BORRADO<>1	
 	END	
 	-- ////////////////////////////////////////////////////////////////////
@@ -1252,11 +1254,22 @@ DECLARE @VP_LOTE_NUMERO_CONSECUTIVO		INT		-- PARA ASIGNAR EL CONSECUTIVO DEL LOT
 DECLARE	@VP_EXISTE_LOTE_VENDOR			INT
 DECLARE	@VP_EXISTE_LOTE_PEARL			INT
 
+IF @PP_K_SISTEMA_EXE =0
+BEGIN
+	SET @VP_EXISTE_LOTE_VENDOR=	ISNULL((SELECT	COUNT(LOTE_VENDOR)
+										FROM	DATA_02Pruebas.dbo.INVENTARIO
+										WHERE	K_ITEM=@PP_K_ITEM
+										AND		LTRIM(RTRIM(LOTE_VENDOR))=@PP_LOTE_VENDOR
+										),0)
+END
+ELSE
+BEGIN
 	SET @VP_EXISTE_LOTE_VENDOR=	ISNULL((SELECT	COUNT(LOTE_VENDOR)
 										FROM	DATA_02.dbo.INVENTARIO
 										WHERE	K_ITEM=@PP_K_ITEM
 										AND		LTRIM(RTRIM(LOTE_VENDOR))=@PP_LOTE_VENDOR
 										),0)
+END
 
 	IF @VP_EXISTE_LOTE_VENDOR<=0
 	BEGIN						
@@ -1268,13 +1281,24 @@ DECLARE	@VP_EXISTE_LOTE_PEARL			INT
 				--	SET @VP_LOTE_PEARL= CONCAT ( RIGHT((YEAR(GETDATE())),2), FORMAT(MONTH(GETDATE()),'00'))
 				SELECT	@VP_LOTE_PEARL = FORMAT(K_LOTE,'0000')	FROM	ITEM	WHERE	K_ITEM=@PP_K_ITEM					
 				SET @VP_LOTE_PEARL= CONCAT(@VP_LOTE_PEARL,FORMAT(@VP_CONSECUTIVO_NUEVO_LOTE,'0000'))
-							
-					SET @VP_EXISTE_LOTE_PEARL=ISNULL( (	SELECT	COUNT(LOTE_PEARL)													
-														--SELECT	COUNT(distinct(LOTE_PEARL))
-														FROM	DATA_02.dbo.INVENTARIO
-														WHERE	LOTE_PEARL=@VP_LOTE_PEARL		--WHERE	LOTE_PEARL=@VP_LOTE_PEARL										
-														),0)
 					
+					IF @PP_K_SISTEMA_EXE =0
+					BEGIN		
+						SET @VP_EXISTE_LOTE_PEARL=ISNULL( (	SELECT	COUNT(LOTE_PEARL)													
+															--SELECT	COUNT(distinct(LOTE_PEARL))
+															FROM	DATA_02Pruebas.dbo.INVENTARIO
+															WHERE	LOTE_PEARL=@VP_LOTE_PEARL		--WHERE	LOTE_PEARL=@VP_LOTE_PEARL										
+															),0)
+					END
+					ELSE
+					BEGIN
+						SET @VP_EXISTE_LOTE_PEARL=ISNULL( (	SELECT	COUNT(LOTE_PEARL)													
+															--SELECT	COUNT(distinct(LOTE_PEARL))
+															FROM	DATA_02.dbo.INVENTARIO
+															WHERE	LOTE_PEARL=@VP_LOTE_PEARL		--WHERE	LOTE_PEARL=@VP_LOTE_PEARL										
+															),0)
+					END
+
 					IF @VP_EXISTE_LOTE_PEARL>0
 					BEGIN
 						SET @VP_CONSECUTIVO_NUEVO_LOTE += 1
@@ -1289,13 +1313,25 @@ DECLARE	@VP_EXISTE_LOTE_PEARL			INT
 			SET @VP_LOTE_NUMERO_CONSECUTIVO=1
 	END
 	ELSE
-	BEGIN			
-			SELECT TOP(1)	@VP_LOTE_PEARL=(LOTE_PEARL),
-							@VP_LOTE_NUMERO_CONSECUTIVO=(LOTE_NUMERO_CONSECUTIVO)+1
-			FROM	DATA_02.dbo.INVENTARIO
-			WHERE	K_ITEM=@PP_K_ITEM
-			AND		LOTE_VENDOR=@PP_LOTE_VENDOR
-			ORDER BY LOTE_NUMERO_CONSECUTIVO DESC							
+	BEGIN	
+			IF @PP_K_SISTEMA_EXE =0
+			BEGIN
+				SELECT TOP(1)	@VP_LOTE_PEARL=(LOTE_PEARL),
+								@VP_LOTE_NUMERO_CONSECUTIVO=(LOTE_NUMERO_CONSECUTIVO)+1
+				FROM	DATA_02Pruebas.dbo.INVENTARIO
+				WHERE	K_ITEM=@PP_K_ITEM
+				AND		LOTE_VENDOR=@PP_LOTE_VENDOR
+				ORDER BY LOTE_NUMERO_CONSECUTIVO DESC
+			END
+			ELSE
+			BEGIN
+				SELECT TOP(1)	@VP_LOTE_PEARL=(LOTE_PEARL),
+								@VP_LOTE_NUMERO_CONSECUTIVO=(LOTE_NUMERO_CONSECUTIVO)+1
+				FROM	DATA_02.dbo.INVENTARIO
+				WHERE	K_ITEM=@PP_K_ITEM
+				AND		LOTE_VENDOR=@PP_LOTE_VENDOR
+				ORDER BY LOTE_NUMERO_CONSECUTIVO DESC
+			END
 	END
 	
 	SET @PP_LOTE_PEARL=@VP_LOTE_PEARL
@@ -1348,7 +1384,7 @@ BEGIN TRY
 	SET @VP_ENTREGA_NO=		(ISNULL((
 									SELECT	COUNT(DISTINCT(K_ENTREGA))
 									FROM	DETAILS_BPO_RECIBO
-									WHERE		K_ORDEN_COMPRA_PEDIDO=@PP_K_ORDEN_COMPRA_PEDIDO
+									WHERE	K_ORDEN_COMPRA_PEDIDO=@PP_K_ORDEN_COMPRA_PEDIDO
 									--AND			K_ITEM=@PP_K_ITEM
 							),0)	) + 1
 	-----==========================================================================================================
@@ -1440,25 +1476,50 @@ BEGIN TRY
 						DECLARE @PP_F_DATE_INVENTARIO DATE
 						SET @PP_F_DATE_INVENTARIO=GETDATE()
 
-						EXECUTE DATA_02.dbo.PG_IN_INVENTARIO_RECIBO	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION, 
-													-- =====================================
-													@PP_K_ITEM,						
-													-- ===========================
-													0,--,@PP_K_CLASIFICACION, DEFAULT '0'
-													10,--@PP_K_STATUS_INVENTARIO,		10= PREREGISTRADO
-													-- ===========================
-													@PP_K_ORDEN_COMPRA_PEDIDO,	@VP_K_DETAILS_BPO_RECIBO,
-													-- ===========================
-													@VP_VALOR_SERI,					--@PP_SERIE_NO,
-													@VP_VALOR_LOTE,					--@PP_LOTE_VENDOR,
-													@VP_LOTE_PEARL,				
-													@VP_LOTE_NUMERO_CONSECUTIVO,
-													@VP_ENTREGA_NO,
-													-- ===========================
-													@PP_F_DATE_INVENTARIO,
-													'',--@PP_C_INVENTARIO,
-													-- ============================
-													@VP_VALOR_QTTY							
+						IF @PP_K_SISTEMA_EXE = 0 
+						BEGIN
+							EXECUTE DATA_02Pruebas.dbo.PG_IN_INVENTARIO_RECIBO	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION, 
+														-- =====================================
+														@PP_K_ITEM,						
+														-- ===========================
+														0,--,@PP_K_CLASIFICACION, DEFAULT '0'
+														10,--@PP_K_STATUS_INVENTARIO,		10= PREREGISTRADO
+														-- ===========================
+														@PP_K_ORDEN_COMPRA_PEDIDO,	@VP_K_DETAILS_BPO_RECIBO,
+														-- ===========================
+														@VP_VALOR_SERI,					--@PP_SERIE_NO,
+														@VP_VALOR_LOTE,					--@PP_LOTE_VENDOR,
+														@VP_LOTE_PEARL,				
+														@VP_LOTE_NUMERO_CONSECUTIVO,
+														@VP_ENTREGA_NO,
+														-- ===========================
+														@PP_F_DATE_INVENTARIO,
+														'',--@PP_C_INVENTARIO,
+														-- ============================
+														@VP_VALOR_QTTY							
+						END
+						ELSE
+						BEGIN
+							EXECUTE DATA_02.dbo.PG_IN_INVENTARIO_RECIBO	@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION, 
+														-- =====================================
+														@PP_K_ITEM,						
+														-- ===========================
+														0,--,@PP_K_CLASIFICACION, DEFAULT '0'
+														10,--@PP_K_STATUS_INVENTARIO,		10= PREREGISTRADO
+														-- ===========================
+														@PP_K_ORDEN_COMPRA_PEDIDO,	@VP_K_DETAILS_BPO_RECIBO,
+														-- ===========================
+														@VP_VALOR_SERI,					--@PP_SERIE_NO,
+														@VP_VALOR_LOTE,					--@PP_LOTE_VENDOR,
+														@VP_LOTE_PEARL,				
+														@VP_LOTE_NUMERO_CONSECUTIVO,
+														@VP_ENTREGA_NO,
+														-- ===========================
+														@PP_F_DATE_INVENTARIO,
+														'',--@PP_C_INVENTARIO,
+														-- ============================
+														@VP_VALOR_QTTY							
+						END
 					END		
 					ELSE
 					BEGIN
