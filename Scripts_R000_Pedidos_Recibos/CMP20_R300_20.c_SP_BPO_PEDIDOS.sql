@@ -1385,7 +1385,7 @@ BEGIN TRY
 									SELECT	COUNT(DISTINCT(K_ENTREGA))
 									FROM	DETAILS_BPO_RECIBO
 									WHERE	K_ORDEN_COMPRA_PEDIDO=@PP_K_ORDEN_COMPRA_PEDIDO
-									--AND			K_ITEM=@PP_K_ITEM
+									AND		K_ITEM=@PP_K_ITEM
 							),0)	) + 1
 	-----==========================================================================================================
 		-- INICIO DEL INSERT CON ARREGLO
