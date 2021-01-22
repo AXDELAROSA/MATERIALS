@@ -7,8 +7,8 @@
 -- // CREATION DATE:	20200926
 -- ////////////////////////////////////////////////////////////// 
 
-USE [DATA_02pruebas]
---USE [DATA_02]
+--USE [DATA_02pruebas]
+USE [DATA_02]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_LI_INVENTARIO_X_ITEM]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 GO
---		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 0,139,  82
+--		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 1,139,  1453
 --		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 0,139,  70
 CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 	@PP_K_SISTEMA_EXE				INT,
@@ -66,6 +66,7 @@ BEGIN
 					ELSE	LOC	END
 				 ) AS	LOC
 				,K_LOCACION
+				,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
 				-- =============================	
 	FROM		INVENTARIO
 	INNER JOIN	FOLIO					ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
