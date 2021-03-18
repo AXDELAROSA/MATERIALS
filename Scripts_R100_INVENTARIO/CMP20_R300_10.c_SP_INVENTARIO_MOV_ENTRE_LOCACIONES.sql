@@ -537,7 +537,7 @@ DECLARE @VP_MENSAJE						VARCHAR(500) = ''		,@VP_LOCACION_ORIGEN_BD		INT
 	--UPDATE	INVENTARIO
 --=====================================================================================================================================
 --=====================================================================================================================================
-		-- SE OBTIENE LA ORDEN DE COMPRA DESTINO PARA LOS LOGS
+		-- SE OBTIENE LA ORDEN DE TRABAJO DESTINO PARA LOS LOGS
 		DECLARE @VP_K_ORDEN_TRABAJO_DESTINO		INT			
 		
 		IF @PP_K_ORDEN_TRABAJO_DESTINO = -1
@@ -738,8 +738,7 @@ BEGIN TRY
 -- ========================================================================================================================================================================================================================
 -- ========================================================================================================================================================================================================================
 -- ========================================================================================================================================================================================================================
---	VALIDACIONES ESPECIFICAS
-	
+--	TIPO_ACCION	#1 FOLIO_NUEVO	, #2 FOLIO_EXISTENTE	
 	IF  @PP_TIPO_ACCION_FRONT IN (1,2)
 	BEGIN		
 		-- ESTA VALIDACIÓN LA HACÍA EN EL FRONT, SE MOVIÓ AL BACK, PARA MEJOR FUNCIONABILIDAD.
@@ -747,20 +746,18 @@ BEGIN TRY
 														-- ===========================
 														@PP_K_LC_ORI
 	END
-
-
 	-- =============================================================================
 	-- ========		PARA OBTENER EL FOLIO DESTINO DE ACUERDO AL TIPO DE MOVIMIENTO
 	-- =============================================================================
 	--	PARA GENERAR EL NUEVO FOLIO PARA LOS ITEM QUE SE MOVERAN DE MHI-A PARA MHI-B
 	IF  @PP_TIPO_ACCION_FRONT = 1
 	BEGIN
-		--	SE GENERA UN NUEVO FOLIO PARA EL MATERIAL. COMO SERÁ DE TIPO MHI-B SE ASIGNA DE TIPO MHI-A
+		--	SE GENERA UN NUEVO FOLIO PARA EL MATERIAL. COMO SE TRANSFERIRA DEL FOLIO BASE A UN FOLIO APARTADO (TIPO MHI-A)
 		DECLARE @VP_F_DATE_FOLIO			DATE = GETDATE()
 
 		EXECUTE [dbo].[PG_IN_FOLIO]		@PP_K_SISTEMA_EXE, @PP_K_USUARIO_ACCION,
 										-- ===========================	
-										@PP_K_LC_DES,	--@PP_K_LOCACION_DESTINO,
+										@PP_K_LC_DES,	--@PP_K_LOCACION_DESTINO, CUANDO ES TIPO DE ACCIÓN #1 SE ENVÍA 4 (MHI)
 										0,	
 										'A',--@PP_TIPO, 
 										-- =========================
@@ -946,8 +943,11 @@ BEGIN TRY
 -- ========================================================================================================================================================================================================================
 -- ========================================================================================================================================================================================================================
 -- ========================================================================================================================================================================================================================
---	VALIDACIONES ESPECIFICAS
-	
+--	VALIDACIONES ESPECIFICAS	
+--	@PP_TIPO_ACCION_FRONT	= 1	( CB_LOC_TRANSFERIR,		VP_FOLIO_ORIGEN )
+--	@PP_TIPO_ACCION_FRONT	= 2	( TB_ORDEN_A_TRANSFERIR,	VP_FOLIO_ORIGEN )
+--	@PP_TIPO_ACCION_FRONT	= 3	( PP_FOLIO_DESTINO,			VP_FOLIO_ORIGEN,	TB_ORDEN_A_TRANSFERIR )
+
 	IF  @PP_TIPO_ACCION_FRONT IN (1,2)
 	BEGIN		
 		-- ESTA VALIDACIÓN LA HACÍA EN EL FRONT, SE MOVIÓ AL BACK, PARA MEJOR FUNCIONABILIDAD.
@@ -955,7 +955,6 @@ BEGIN TRY
 														-- ===========================
 														@PP_K_LC_ORI
 	END
-
 
 	-- =============================================================================
 	-- ========		PARA OBTENER EL FOLIO DESTINO DE ACUERDO AL TIPO DE MOVIMIENTO
@@ -1070,13 +1069,13 @@ DECLARE CU_OBTENER_REGISTROS			CURSOR LOCAL FOR
 			BEGIN
 				EXECUTE [PG_PR_MOVIMIENTO_LOCACION_A_LOCACION]	@PP_K_SISTEMA_EXE	,@PP_K_USUARIO_ACCION
 																	-- ======================================================
-																	,@VP_CU_K_ORDE		,@VP_CU_K_ENTR
-																	,@PP_K_ITEM			,@VP_CU_LOTE_P
-																	,@PP_K_LC_ORI		,@PP_K_LC_DES
-																	,@VP_CU_K_INVE		,@VP_CU_SERIEN		
-																	,40					--	40		TRANSFERENCIA A ORDEN			TRXORD		-- MOVIMIENTO_TIPO
-																	,@VP_CU_QTY_MV		,@VP_K_FOLIO_DESTINO
-																	,@VP_ORDEN_DESTINO
+																,@VP_CU_K_ORDE		,@VP_CU_K_ENTR
+																,@PP_K_ITEM			,@VP_CU_LOTE_P
+																,@PP_K_LC_ORI		,@PP_K_LC_DES
+																,@VP_CU_K_INVE		,@VP_CU_SERIEN		
+																,40					--	40		TRANSFERENCIA A ORDEN			TRXORD		-- MOVIMIENTO_TIPO
+																,@VP_CU_QTY_MV		,@VP_K_FOLIO_DESTINO
+																,@VP_ORDEN_DESTINO
 			END
 		--==============================================================
 		FETCH NEXT FROM CU_OBTENER_REGISTROS INTO	@VP_CU_K_ORDE	,@VP_CU_K_ENTR	,@VP_CU_LOTE_P		,@VP_CU_K_INVE	,@VP_CU_SERIEN	,@VP_CU_QTY_MV

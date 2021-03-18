@@ -38,9 +38,9 @@ AS
 	INSERT INTO @VP_TA_CATALOGO 
 	SELECT		upc_cd					AS K_COMBOBOX,
 				item_no					AS D_COMBOBOX
-	FROM	IMITMIDX_SQL
-	INNER JOIN COMPRAS.DBO.ITEM ON	IMITMIDX_SQL.upc_cd=item.K_ITEM
-	WHERE	PUR_OR_MFG='R'
+	FROM		IMITMIDX_SQL
+	INNER JOIN	COMPRAS.DBO.ITEM ON	IMITMIDX_SQL.upc_cd=item.K_ITEM
+	WHERE		PUR_OR_MFG='R'
 	AND			ITEM.L_BORRADO=0
 	ORDER BY item_no
 
@@ -119,6 +119,102 @@ AS
 	FROM		@VP_TA_CATALOGO
 	ORDER BY	TA_O_CATALOGO, TA_D_CATALOGO 
 	-- ==========================================
+	-- ////////////////////////////////////////////////////
+GO
+
+
+-- //////////////////////////////////////////////////////////////
+-- //		SE UTILIZA EN LA PANTALLA PARA ENTREGA DE MATERIAL CONTROLADO
+-- //////////////////////////////////////////////////////////////
+-- // STORED PROCEDURE ---> PARA CARGAR COMBO CON ITEMS CONTROLADOS.
+-- // ITEM CATALOGADOS CON LA CLASS_ITEM [ROW_MATERIAL]
+-- //////////////////////////////////////////////////////////////
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_CB_ITEM_ENTREGAR]') AND type in (N'P', N'PC'))
+	DROP PROCEDURE [dbo].[PG_CB_ITEM_ENTREGAR]
+GO
+--		 EXECUTE [dbo].[PG_CB_ITEM_ENTREGAR] 0,139,1
+CREATE PROCEDURE [dbo].[PG_CB_ITEM_ENTREGAR]
+	@PP_K_SISTEMA_EXE			INT,
+	@PP_K_USUARIO				INT,
+	--============================
+	@PP_L_CON_TODOS				INT
+AS
+
+	DECLARE @VP_TA_CATALOGO	AS TABLE
+				(	TA_K_CATALOGO		INT,
+					TA_D_CATALOGO		VARCHAR(250)	)	
+	
+	INSERT INTO @VP_TA_CATALOGO	
+	SELECT		upc_cd					AS K_COMBOBOX,
+				--item_no					AS D_COMBOBOX
+				D_ITEM					AS D_COMBOBOX
+	FROM		IMITMIDX_SQL
+	INNER JOIN	COMPRAS.DBO.ITEM ON	IMITMIDX_SQL.upc_cd=item.K_ITEM
+	WHERE		PUR_OR_MFG		= 'R'
+	AND			ITEM.L_BORRADO	= 0
+	--AND			TRADEMARK_ITEM	= 'HILO'
+	ORDER BY	D_ITEM
+
+
+	IF @PP_L_CON_TODOS=1
+	BEGIN
+		INSERT INTO @VP_TA_CATALOGO
+			( TA_K_CATALOGO,	TA_D_CATALOGO	)
+		VALUES
+			( -1,				'( SIN DESCRIPCIÓN )'	)
+	END
+
+		SELECT		TA_K_CATALOGO	AS K_COMBOBOX,
+					TA_D_CATALOGO	AS D_COMBOBOX 
+		FROM		@VP_TA_CATALOGO
+		ORDER BY	TA_D_CATALOGO 
+	-- ==========================================
+
+	-- ////////////////////////////////////////////////////
+GO
+
+
+-- //////////////////////////////////////////////////////////////
+-- // STORED PROCEDURE ---> PARA CARGAR COMBO CON ITEMS CONTROLADOS.
+-- // ITEM CATALOGADOS CON LA CLASS_ITEM [ROW_MATERIAL]
+-- //////////////////////////////////////////////////////////////
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_CB_LOCACION_ENTREGAR]') AND type in (N'P', N'PC'))
+	DROP PROCEDURE [dbo].[PG_CB_LOCACION_ENTREGAR]
+GO
+--		 EXECUTE [dbo].[PG_CB_LOCACION_ENTREGAR] 0,139,1
+CREATE PROCEDURE [dbo].[PG_CB_LOCACION_ENTREGAR]
+	@PP_K_SISTEMA_EXE			INT,
+	@PP_K_USUARIO				INT,
+	--============================
+	@PP_L_CON_TODOS				INT
+AS
+
+	DECLARE @VP_TA_CATALOGO	AS TABLE
+				(	TA_K_CATALOGO		INT,
+					TA_D_CATALOGO		VARCHAR(250)	)	
+	
+	INSERT INTO @VP_TA_CATALOGO	
+	SELECT		A4GLIdentity			AS K_COMBOBOX,
+				loc_desc				AS D_COMBOBOX
+	FROM		[IMLOCFIL_SQL]
+	WHERE		[user_def_fld_1]	= 'RW0'
+	ORDER BY	loc_desc
+
+
+	IF @PP_L_CON_TODOS=1
+	BEGIN
+		INSERT INTO @VP_TA_CATALOGO
+			( TA_K_CATALOGO,	TA_D_CATALOGO	)
+		VALUES
+			( -1,				'( SELECCIONAR )'	)
+	END
+
+		SELECT		TA_K_CATALOGO	AS K_COMBOBOX,
+					TA_D_CATALOGO	AS D_COMBOBOX 
+		FROM		@VP_TA_CATALOGO
+		ORDER BY	TA_D_CATALOGO 
+	-- ==========================================
+
 	-- ////////////////////////////////////////////////////
 GO
 
