@@ -12,6 +12,8 @@ USE [DATA_02]
 GO
 
 -- //////////////////////////////////////////////////////////////
+--					CONTENIDO DEL SP
+--	[PG_LI_INVENTARIO_X_ITEM]
 
 
 -- //////////////////////////////////////////////////////////////
@@ -22,7 +24,7 @@ GO
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_LI_INVENTARIO_X_ITEM]') AND type in (N'P', N'PC'))
 	DROP PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 GO
---		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 1,139,  1453
+--		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 1,139,  70
 --		 EXECUTE [dbo].[PG_LI_INVENTARIO_X_ITEM] 0,139,  70
 CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 	@PP_K_SISTEMA_EXE				INT,
@@ -30,54 +32,147 @@ CREATE PROCEDURE [dbo].[PG_LI_INVENTARIO_X_ITEM]
 	-- ===========================
 	@PP_K_ITEM						INT
 AS
-	-- ///////////////////////////////////////////
-	-- =========================================		
 	-- =========================================
-IF @PP_K_SISTEMA_EXE = 0 
+IF	@PP_K_USUARIO_ACCION	= 139
 BEGIN
-	SELECT		DISTINCT
-				-- =============================	
-				INVENTARIO.K_FOLIO
-				,FOLIO.TIPO
-				,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
-					ELSE	LOC	END
-				 ) AS	LOC
-				,K_LOCACION
-				,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
-				-- =============================	
-	FROM		INVENTARIO
-	INNER JOIN	FOLIO							ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
-	INNER JOIN	COMPRAS_Pruebas.dbo.ITEM		ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
-	INNER JOIN	IMLOCFIL_SQL ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
-				-- =============================
-				-- =============================
-	WHERE		INVENTARIO.K_ITEM=@PP_K_ITEM
-	AND			INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADO
-	AND			INVENTARIO.L_BORRADO<>1
-	ORDER BY	K_FOLIO DESC
+	-- //////////////////////////////////////////////////////////////////////////////////////
+	IF	(	SELECT	LTRIM(RTRIM(TRADEMARK_ITEM))
+			FROM	COMPRAS_Pruebas.DBO.ITEM	(NOLOCK)
+			WHERE	K_ITEM	= @PP_K_ITEM		
+		)	<> 'HILO'
+	BEGIN
+			SELECT		DISTINCT
+						-- =============================	
+						INVENTARIO.K_FOLIO
+						,FOLIO.TIPO
+						,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
+							ELSE	LOC	END
+						 ) AS	LOC
+						,K_LOCACION
+						,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
+						-- =============================	
+			FROM		INVENTARIO						(NOLOCK) 
+			INNER JOIN	FOLIO							(NOLOCK) ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
+			INNER JOIN	COMPRAS_Pruebas.dbo.ITEM		(NOLOCK) ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
+			INNER JOIN	IMLOCFIL_SQL					(NOLOCK) ON FOLIO.K_LOCACION	= IMLOCFIL_SQL.A4GLIdentity
+						-- =============================
+						-- =============================
+			WHERE		INVENTARIO.K_ITEM				= @PP_K_ITEM
+			AND			INVENTARIO.K_STATUS_INVENTARIO	>= 20	-- [20]	= INSPECCIONADO
+			AND			INVENTARIO.L_BORRADO			<> 1
+			ORDER BY	K_FOLIO DESC
+	-- //////////////////////////////////////////////////////////////////////////////////////
 END
-ELSE
-BEGIN
-	SELECT		DISTINCT
-				-- =============================	
-				INVENTARIO.K_FOLIO
-				,FOLIO.TIPO
-				,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
-					ELSE	LOC	END
-				 ) AS	LOC
-				,K_LOCACION
-				,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
-				-- =============================	
-	FROM		INVENTARIO
-	INNER JOIN	FOLIO					ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
-	INNER JOIN	COMPRAS.dbo.ITEM		ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
-	INNER JOIN	IMLOCFIL_SQL ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
-				-- =============================
-				-- =============================
-	WHERE		INVENTARIO.K_ITEM=@PP_K_ITEM
-	AND			INVENTARIO.K_STATUS_INVENTARIO>=20	-- [20]	= INSPECCIONADO
-	AND			INVENTARIO.L_BORRADO<>1
-	ORDER BY	K_FOLIO DESC
+
+--IF @PP_K_SISTEMA_EXE = 0 
+--BEGIN
+--	-- //////////////////////////////////////////////////////////////////////////////////////
+--	IF	(	SELECT	LTRIM(RTRIM(TRADEMARK_ITEM))
+--			FROM	COMPRAS_Pruebas.DBO.ITEM	(NOLOCK)
+--			WHERE	K_ITEM	= @PP_K_ITEM		
+--		)	<> 'HILO'
+--	BEGIN
+--			SELECT		DISTINCT
+--						-- =============================	
+--						INVENTARIO.K_FOLIO
+--						,FOLIO.TIPO
+--						,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
+--							ELSE	LOC	END
+--						 ) AS	LOC
+--						,K_LOCACION
+--						,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
+--						-- =============================	
+--			FROM		INVENTARIO						(NOLOCK) 
+--			INNER JOIN	FOLIO							(NOLOCK) ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
+--			INNER JOIN	COMPRAS_Pruebas.dbo.ITEM		(NOLOCK) ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
+--			INNER JOIN	IMLOCFIL_SQL					(NOLOCK) ON FOLIO.K_LOCACION	= IMLOCFIL_SQL.A4GLIdentity
+--						-- =============================
+--						-- =============================
+--			WHERE		INVENTARIO.K_ITEM				= @PP_K_ITEM
+--			AND			INVENTARIO.K_STATUS_INVENTARIO	= 20	-- [20]	= INSPECCIONADO
+--			AND			INVENTARIO.L_BORRADO			<> 1
+--			ORDER BY	K_FOLIO DESC
+--	END
+--	ELSE
+--	BEGIN
+--			SELECT		DISTINCT
+--						-- =============================	
+--						INVENTARIO.K_FOLIO
+--						,FOLIO.TIPO
+--						,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
+--							ELSE	LOC	END
+--						 ) AS	LOC
+--						,K_LOCACION
+--						,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
+--						-- =============================	
+--			FROM		INVENTARIO						(NOLOCK) 
+--			INNER JOIN	FOLIO							(NOLOCK) ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
+--			INNER JOIN	COMPRAS_Pruebas.dbo.ITEM		(NOLOCK) ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
+--			INNER JOIN	IMLOCFIL_SQL					(NOLOCK) ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
+--						-- =============================
+--						-- =============================
+--			WHERE		INVENTARIO.K_ITEM				= @PP_K_ITEM
+--			AND			INVENTARIO.K_STATUS_INVENTARIO	= 20	-- [20]	= INSPECCIONADO
+--			AND			FOLIO.K_LOCACION				= 4
+--			AND			INVENTARIO.L_BORRADO <> 1
+--			ORDER BY	K_FOLIO DESC
+--	END
+--	-- //////////////////////////////////////////////////////////////////////////////////////
+--END
+--ELSE
+--BEGIN
+	-- //////////////////////////////////////////////////////////////////////////////////////
+	IF	(	SELECT	LTRIM(RTRIM(TRADEMARK_ITEM))
+			FROM	COMPRAS_Pruebas.DBO.ITEM	(NOLOCK)
+			WHERE	K_ITEM	= @PP_K_ITEM		
+		)	<> 'HILO'
+	BEGIN
+			SELECT		DISTINCT
+						-- =============================	
+						INVENTARIO.K_FOLIO
+						,FOLIO.TIPO
+						,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
+							ELSE	LOC	END
+						 ) AS	LOC
+						,K_LOCACION
+						,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
+						-- =============================	
+			FROM		INVENTARIO
+			INNER JOIN	FOLIO					(NOLOCK) ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
+			INNER JOIN	COMPRAS.dbo.ITEM		(NOLOCK) ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
+			INNER JOIN	IMLOCFIL_SQL			(NOLOCK) ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
+						-- =============================
+						-- =============================
+			WHERE		INVENTARIO.K_ITEM				= @PP_K_ITEM
+			AND			INVENTARIO.K_STATUS_INVENTARIO	= 20	-- [20]	= INSPECCIONADO
+			AND			INVENTARIO.L_BORRADO			<> 1
+			ORDER BY	K_FOLIO DESC
+	END
+	ELSE
+	BEGIN
+			SELECT		DISTINCT
+						-- =============================	
+						INVENTARIO.K_FOLIO
+						,FOLIO.TIPO
+						,( CASE WHEN LOC = 'MHI' THEN	'ALMACEN'
+							ELSE	LOC	END
+						 ) AS	LOC
+						,K_LOCACION
+						,K_ORDEN_TRABAJO AS ORDEN_TRABAJO
+						-- =============================	
+			FROM		INVENTARIO
+			INNER JOIN	FOLIO					(NOLOCK) ON FOLIO.K_FOLIO=INVENTARIO.K_FOLIO
+			INNER JOIN	COMPRAS.dbo.ITEM		(NOLOCK) ON INVENTARIO.K_ITEM=ITEM.K_ITEM	
+			INNER JOIN	IMLOCFIL_SQL			(NOLOCK) ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
+						-- =============================
+						-- =============================
+			WHERE		INVENTARIO.K_ITEM				= @PP_K_ITEM
+			AND			INVENTARIO.K_STATUS_INVENTARIO	= 20	-- [20]	= INSPECCIONADO
+			AND			FOLIO.K_LOCACION				= 4
+			AND			INVENTARIO.L_BORRADO			<> 1
+			ORDER BY	K_FOLIO DESC
+	END
+	-- //////////////////////////////////////////////////////////////////////////////////////
 END
 	-- /////////////////////////////////////////////////////////////////////
 GO
