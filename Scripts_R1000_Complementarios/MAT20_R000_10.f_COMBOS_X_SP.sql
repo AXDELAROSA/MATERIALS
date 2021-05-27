@@ -38,7 +38,7 @@ AS
 	INSERT INTO @VP_TA_CATALOGO 
 	SELECT		upc_cd					AS K_COMBOBOX,
 				item_no					AS D_COMBOBOX
-	FROM		IMITMIDX_SQL
+	FROM		IMITMIDX_SQL		(NOLOCK)
 	INNER JOIN	COMPRAS.DBO.ITEM ON	IMITMIDX_SQL.upc_cd=item.K_ITEM
 	WHERE		PUR_OR_MFG='R'
 	AND			ITEM.L_BORRADO=0
@@ -102,8 +102,8 @@ AS
 				,0						AS L_DELETED
 				,1						AS L_ACTIVO
 				-- =============================	
-	FROM		[COMPRAS].[dbo].ITEM
-	INNER JOIN  [COMPRAS].[dbo].VENDOR ON VENDOR.K_VENDOR=ITEM.K_VENDOR
+	FROM		[COMPRAS].[dbo].ITEM	(NOLOCK) 
+	INNER JOIN  [COMPRAS].[dbo].VENDOR	(NOLOCK) ON VENDOR.K_VENDOR=ITEM.K_VENDOR
 				-- =============================
 	WHERE		K_CLASS_ITEM=2
 	AND			ITEM.L_BORRADO<>1
@@ -148,8 +148,8 @@ AS
 	SELECT		upc_cd					AS K_COMBOBOX,
 				--item_no					AS D_COMBOBOX
 				D_ITEM					AS D_COMBOBOX
-	FROM		IMITMIDX_SQL
-	INNER JOIN	COMPRAS.DBO.ITEM ON	IMITMIDX_SQL.upc_cd=item.K_ITEM
+	FROM		IMITMIDX_SQL		(NOLOCK) 
+	INNER JOIN	COMPRAS.DBO.ITEM	(NOLOCK) ON	IMITMIDX_SQL.upc_cd=item.K_ITEM
 	WHERE		PUR_OR_MFG		= 'R'
 	AND			ITEM.L_BORRADO	= 0
 	--AND			TRADEMARK_ITEM	= 'HILO'
@@ -196,7 +196,7 @@ AS
 	INSERT INTO @VP_TA_CATALOGO	
 	SELECT		A4GLIdentity			AS K_COMBOBOX,
 				loc_desc				AS D_COMBOBOX
-	FROM		[IMLOCFIL_SQL]
+	FROM		[IMLOCFIL_SQL]		(NOLOCK)
 	WHERE		[user_def_fld_1]	= 'RW0'
 	ORDER BY	loc_desc
 
@@ -218,6 +218,80 @@ AS
 	-- ////////////////////////////////////////////////////
 GO
 
+
+-- //////////////////////////////////////////////////////////////
+--	SE UTILIZAN EN LA FO INVENTARIO
+-- //////////////////////////////////////////////////////////////
+-- // STORED PROCEDURE ---> PARA CARGAR COMBO DE ITEM ROW MATERIAL
+-- // CON AQUELLOS QUE TIENEN MATERIAL EN EL FOLIO BASE.
+-- //////////////////////////////////////////////////////////////
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_CB_ROW_MATERIAL_INVENTARIO]') AND type in (N'P', N'PC'))
+	DROP PROCEDURE [dbo].[PG_CB_ROW_MATERIAL_INVENTARIO]
+GO
+--		 EXECUTE [dbo].[PG_CB_ROW_MATERIAL_INVENTARIO] 0,139,0
+--		 EXECUTE [dbo].[PG_CB_ROW_MATERIAL_INVENTARIO] 0,87,0
+--		 EXECUTE [dbo].[PG_CB_ROW_MATERIAL_INVENTARIO] 0,139,1
+--		 EXECUTE [dbo].[PG_CB_ROW_MATERIAL_INVENTARIO] 0,139,2
+CREATE PROCEDURE [dbo].[PG_CB_ROW_MATERIAL_INVENTARIO]
+	@PP_K_SISTEMA_EXE			INT,
+	@PP_K_USUARIO				INT,
+	--============================
+	@PP_L_CON_TODOS				INT
+AS
+	DECLARE @VP_TA_CATALOGO	AS TABLE
+				(	TA_K_CATALOGO		INT,
+					TA_D_CATALOGO		VARCHAR(50)	)	
+
+	IF @PP_K_USUARIO	IN (139)
+	BEGIN
+		INSERT INTO @VP_TA_CATALOGO 
+		SELECT		upc_cd					AS K_COMBOBOX,
+					item_no					AS D_COMBOBOX
+		FROM		IMITMIDX_SQL		(NOLOCK)
+		INNER JOIN	COMPRAS.DBO.ITEM ON	IMITMIDX_SQL.upc_cd=item.K_ITEM
+		WHERE		PUR_OR_MFG='R'
+		AND			ITEM.L_BORRADO=0
+		ORDER BY item_no
+	END
+	ELSE
+	BEGIN
+		INSERT INTO @VP_TA_CATALOGO 
+		SELECT		DISTINCT
+					upc_cd					AS K_COMBOBOX,
+					item_no					AS D_COMBOBOX
+		FROM		IMITMIDX_SQL			(NOLOCK)
+		INNER JOIN	COMPRAS.DBO.ITEM		(NOLOCK) ON	IMITMIDX_SQL.upc_cd	= item.K_ITEM
+		INNER JOIN	DATA_02.dbo.INVENTARIO	(NOLOCK) ON INVENTARIO.K_ITEM	= ITEM.K_ITEM
+		INNER JOIN	DATA_02.dbo.FOLIO		(NOLOCK) ON INVENTARIO.K_FOLIO	= FOLIO.K_FOLIO
+		WHERE		PUR_OR_MFG='R'
+		AND			ITEM.L_BORRADO=0
+		AND			FOLIO.TIPO	= 'B'
+		ORDER BY item_no
+	END	
+
+	IF @PP_L_CON_TODOS=1
+	BEGIN
+		INSERT INTO @VP_TA_CATALOGO
+			( TA_K_CATALOGO,	TA_D_CATALOGO	)
+		VALUES
+			( -1,				'( SELECCIONA UNA OPCIÓN )'	)
+	END
+	ELSE IF @PP_L_CON_TODOS=2
+	BEGIN
+		INSERT INTO @VP_TA_CATALOGO
+			( TA_K_CATALOGO,	TA_D_CATALOGO	)
+		VALUES
+			( -1,				'( TODOS )'	)
+	END
+
+		SELECT		TA_K_CATALOGO	AS K_COMBOBOX,
+					TA_D_CATALOGO	AS D_COMBOBOX 
+		FROM		@VP_TA_CATALOGO
+		ORDER BY	TA_D_CATALOGO 
+	-- ==========================================
+
+	-- ////////////////////////////////////////////////////
+GO
 -- ///////////////////////////////////////////////////////////////////////////////////////////////////////
 -- ///////////////////////////////////////////////////////////////////////////////////////////////////////
 -- ///////////////////////////////////////////////////////////////////////////////////////////////////////

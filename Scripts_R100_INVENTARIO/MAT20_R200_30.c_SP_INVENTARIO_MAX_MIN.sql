@@ -11,6 +11,12 @@
 GO
 
 -- //////////////////////////////////////////////////////////////
+--		CONTENIDO DEL SP
+--	[PG_LI_INVENTARIO_MIN_MAX]
+--	[PG_SK_INVENTARIO_MIN_MAX]
+--	[PG_IN_LOG_INVENTARIO_MIN_MAX]
+--	[PG_UP_INVENTARIO_MIN_MAX]
+
 -- //////////////////////////////////////////////////////////////
 -- // STORED PROCEDURE ---> SELECT / LISTADO
 -- //////////////////////////////////////////////////////////////
@@ -67,7 +73,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PG_SK_
 	DROP PROCEDURE [dbo].[PG_SK_INVENTARIO_MIN_MAX]
 GO
 --		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,70
---		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,180
+--		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,459
 --		 EXECUTE [dbo].[PG_SK_INVENTARIO_MIN_MAX] 0,139,181
 CREATE PROCEDURE [dbo].[PG_SK_INVENTARIO_MIN_MAX]
 	@PP_K_SISTEMA_EXE				INT,
@@ -170,12 +176,12 @@ AS
 BEGIN TRANSACTION 
 BEGIN TRY
 
-		SELECT	@VP_MINIMA=CANTIDAD_MINIMA
-				,@VP_MAXIMA=CANTIDAD_MAXIMA
+		SELECT	@VP_MINIMA		= CANTIDAD_MINIMA
+				,@VP_MAXIMA		= CANTIDAD_MAXIMA
 		FROM	[COMPRAS].[dbo].ITEM
-		WHERE	K_ITEM=@PP_K_ITEM
-		AND		K_CLASS_ITEM=2
-		AND		ITEM.L_BORRADO<>1	
+		WHERE	K_ITEM			= @PP_K_ITEM
+		AND		K_CLASS_ITEM	= 2
+		AND		ITEM.L_BORRADO	<> 1	
 	--============================================================================
 	--======================================ACTUALIZAR MAX_MINIMOS
 	--============================================================================
