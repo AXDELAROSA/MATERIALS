@@ -143,28 +143,44 @@ AS
 			,INVENTARIO.K_FOLIO
 			,SERIE_NO
 			,K_INVENTARIO
-			-- ======================================================
+			-- ==================================================================================================================================================================
+			--	UNIDAD DE MEDIDA ORIGINAL DEL ITEM
+			-- ==================================================================================================================================================================
 			,UPPER(S_UNIT_OF_MEASURE)		AS S_UNIT_OF_MEASURE
+			-- ==================================================================================================================================================================
+			--	UNIDAD DE MEDIDA DE CONVERSION PARA EL ITEM
+			-- ==================================================================================================================================================================
 			,( CASE
 					WHEN PART_NUMBER_ITEM_PEARL IN ( 'MTWL10MM','MTWL06MM') THEN 'M2'
 					WHEN TRADEMARK_ITEM = 'HILO'							THEN 'PZAS'
 					ELSE '---'
 				END ) AS UOM
+			-- ==================================================================================================================================================================
+			--	UNIDAD DE MEDIDA DE CONVERSION PARA EL ITEM
+			-- ==================================================================================================================================================================
 			,( CASE
 					WHEN PART_NUMBER_ITEM_PEARL IN ( 'MTWL10MM','MTWL06MM') THEN 'M2'
 					WHEN TRADEMARK_ITEM = 'HILO'							THEN 'PZAS'
 					ELSE '---'
 				END ) AS UOM_CONVERSION
+			-- ==================================================================================================================================================================
+			--	CANTIDAD DESPUES DE REALIZAR LA CONVERSIÓN A LA UNIDAD INDICADA.
+			-- ==================================================================================================================================================================
 			,( CASE
 					WHEN PART_NUMBER_ITEM_PEARL IN ( 'MTWL10MM','MTWL06MM') THEN    ROUND((CANTIDAD_RECIBIDA / 1.094),1)  * 1.5
 					WHEN TRADEMARK_ITEM = 'HILO'							THEN    (CANTIDAD_RECIBIDA / 2)
 					ELSE '0'
 				END ) AS CONVERSION
+			-- ==================================================================================================================================================================
+			--	CANTIDAD DESPUES DE REALIZAR LA CONVERSIÓN A LA UNIDAD INDICADA.
+			-- ==================================================================================================================================================================
 			,( CASE
 					WHEN PART_NUMBER_ITEM_PEARL IN ( 'MTWL10MM','MTWL06MM') THEN    ROUND((CANTIDAD_RECIBIDA / 1.094),1)  * 1.5
 					WHEN TRADEMARK_ITEM = 'HILO'							THEN    (CANTIDAD_RECIBIDA / 2)
 					ELSE '0'
 				END ) AS CANTIDAD_CONVERSION
+			-- ==================================================================================================================================================================
+			-- ==================================================================================================================================================================
 	FROM	INVENTARIO				(NOLOCK)  
 	INNER JOIN FOLIO				(NOLOCK) ON INVENTARIO.K_FOLIO=FOLIO.K_FOLIO
 	INNER JOIN IMLOCFIL_SQL			(NOLOCK) ON FOLIO.K_LOCACION=IMLOCFIL_SQL.A4GLIdentity
@@ -204,7 +220,8 @@ AS
 				TA_D_CATALOGO		VARCHAR(500),
 				TA_TRADEMARK		VARCHAR(500),
 				TA_MINIMA			INT,
-				TA_MAXIMA			INT
+				TA_MAXIMA			INT,
+				TA_K_UOM			INT
 			)	
 			
 	INSERT INTO	@VP_TA_CATALOGO
@@ -219,6 +236,7 @@ AS
 			,TRADEMARK_ITEM
 			,CANTIDAD_MINIMA
 			,CANTIDAD_MAXIMA
+			,K_UNIT_OF_MEASURE
 	FROM	INVENTARIO			(NOLOCK)  
 	INNER JOIN COMPRAS.DBO.ITEM	(NOLOCK)  ON	INVENTARIO.K_ITEM=ITEM.K_ITEM
 	INNER JOIN BD_GENERAL.dbo.UNIT_OF_MEASURE	(NOLOCK) ON ITEM.K_UNIT_OF_ITEM = UNIT_OF_MEASURE.K_UNIT_OF_MEASURE
@@ -231,7 +249,7 @@ AS
 						)
 	AND		INVENTARIO.K_STATUS_INVENTARIO >= 20	-- [20]	= INSPECCIONADO
 	AND		INVENTARIO.L_BORRADO <> 1
-	GROUP BY	K_FOLIO,	PART_NUMBER_ITEM_PEARL,	S_UNIT_OF_MEASURE,	ITEM_DESC_1,	TRADEMARK_ITEM, CANTIDAD_MINIMA,	CANTIDAD_MAXIMA
+	GROUP BY	K_FOLIO,	PART_NUMBER_ITEM_PEARL,	S_UNIT_OF_MEASURE,	ITEM_DESC_1,	TRADEMARK_ITEM, CANTIDAD_MINIMA,	CANTIDAD_MAXIMA,	K_UNIT_OF_MEASURE
 
 	SELECT	--*
 			 TA_K_CATALOGO			AS K_FOLIO
@@ -244,21 +262,38 @@ AS
 			,TA_TRADEMARK			AS TRADEMARK_ITEM
 			,TA_MINIMA				AS CANTIDAD_MINIMA
 			,TA_MAXIMA				AS CANTIDAD_MAXIMA
-	-- ======================================================
+	-- ==================================================================================================================================================================
+	--	UNIDAD DE MEDIDA A LA QUE SE REALIZA LA CONVERSIÓN.
+	-- ==================================================================================================================================================================
 	,( CASE
 			WHEN TA_PART_NUMBER IN ( 'MTWL10MM','MTWL06MM')		THEN 'm2 / PZAS'
 			WHEN TA_TRADEMARK = 'HILO'							THEN 'PZAS'
 			ELSE '---'
 		END ) AS UOM_CONVERSION
+	-- ==================================================================================================================================================================
+	--	CANTIDAD DESPUES DE REALIZAR LA CONVERSIÓN A LA UNIDAD INDICADA.
+	-- ==================================================================================================================================================================
 	,( CASE
 			WHEN TA_PART_NUMBER IN ( 'MTWL10MM','MTWL06MM')		THEN	CONCAT(	FORMAT( ROUND((TA_CANTIDAD / 1.094),1)  * 1.5,'0.00'), ' / ', TA_REGISTROS )
 			WHEN TA_TRADEMARK = 'HILO'							THEN    FORMAT( (TA_CANTIDAD / 2) , '0' )
 			ELSE '0'
 		END ) AS CANTIDAD_CONVERSION
-	-- ======================================================
+	-- ==================================================================================================================================================================
+	--	CANTIDAD INDICADA EN SQFT. ES LA QUE SE MANEJA EN LA EMPRESA.
+	-- ==================================================================================================================================================================
+	,(	CASE
+			WHEN	TA_K_UOM	= 12	
+					THEN	'0'															--- LIBRAS
+			WHEN	TA_K_UOM	= 13	
+					THEN	TA_CANTIDAD													--- SQFT
+			WHEN	TA_K_UOM	IN (20,23)	
+					THEN	FORMAT( ROUND( ( ( (TA_CANTIDAD / 1.094)  * 1.5 ) * 10.764 ) ,1 ),'0.00')			--- YARDA / LY [ (M2 * 10.764) = SQFT ]
+			ELSE	'-'	
+		END)	AS	CANTIDAD_SQFT
 	FROM	@VP_TA_CATALOGO
 -- /////////////////////////////////////////////////////////////////////
 GO
+--	SELECT * FROM BD_GENERAL.dbo.UNIT_OF_MEASURE
 
 -- //////////////////////////////////////////////////////////////
 -- // STORED PROCEDURE ---> MUESTRA LA BUSQUEDA DE ITEM
