@@ -136,7 +136,7 @@ DECLARE	 @VP_MENSAJE					NVARCHAR(MAX) = ''
 		,@VP_QTY_STOCK_PRODUCCION		DECIMAL(19,4)
 		,@VP_QTY_CONSUMIDA_MES			DECIMAL(19,4)
 		--=================================================
-		,@VP_MM_1		VARCHAR(15)	= FORMAT(DATEADD (DAY , -30 , GETDATE() ),'yyyy-MM-dd')		--	FECHA ACTUAL MENOS 35 DÍAS, QUE ES EL TIEMPO APRÓXIMADO DE ENTREGA DE MATERIAL.
+		,@VP_MM_1		VARCHAR(15)	= FORMAT(DATEADD (DAY , -35 , GETDATE() ),'yyyy-MM-dd')		--	FECHA ACTUAL MENOS 35 DÍAS, QUE ES EL TIEMPO APRÓXIMADO DE ENTREGA DE MATERIAL.
 		--,@VP_MM_1		VARCHAR(15)	= FORMAT(DATEADD (MONTH , -1 , GETDATE() ),'yyyy-MM-dd')	--	FECHA ACTUAL MENOS 1 MES
 
 	--================================================================
