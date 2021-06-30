@@ -8,7 +8,7 @@
 -- ////////////////////////////////////////////////////////////// 
 
 --USE [COMPRAS_Pruebas]
---USE [COMPRAS]
+USE [COMPRAS]
 GO
 
 -- //////////////////////////////////////////////////////////////
@@ -529,7 +529,7 @@ AS
 		N'Tomar las medidas pertinentes, para agregar los atributos necesarios para su revisión.<br><br>'
 		
 		EXEC msdb.dbo.sp_send_dbmail @recipients=@VP_RECIPIENTS,
-		@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
+		--@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
 		@subject = @VP_SUBJECT,
 		@body = @VP_BODY_HTML,  
 		@body_format = 'HTML'
@@ -672,7 +672,7 @@ AS
 		END
 
 		EXEC msdb.dbo.sp_send_dbmail @recipients=@VP_RECIPIENTS,
-		@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
+		--@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
 		@subject = @VP_SUBJECT,
 		@body = @VP_BODY_HTML,  
 		@body_format = 'HTML',
@@ -1219,7 +1219,7 @@ AS
 								N'</table> <br>'
 		
 		EXEC msdb.dbo.sp_send_dbmail @recipients=@VP_RECIPIENTS,
-		@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
+		--@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
 		@subject = @VP_SUBJECT,
 		@body = @VP_BODY_HTML,  
 		@body_format = 'HTML'		
@@ -1308,7 +1308,7 @@ AS
 					SET ROWCOUNT 0
 		
 		EXEC msdb.dbo.sp_send_dbmail @recipients=@VP_RECIPIENTS,
-		@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
+		--@blind_copy_recipients='ALEJANDROD@PEARLLEATHER.COM.MX',
 		@subject = @VP_SUBJECT,
 		@body = @VP_BODY_HTML,  
 		@body_format = 'HTML'		
