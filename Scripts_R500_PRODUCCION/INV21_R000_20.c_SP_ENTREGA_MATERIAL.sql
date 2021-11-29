@@ -230,6 +230,11 @@ AS
 			EP_NOMBRE + ' ' + EP_APELLIDO_PATERNO AS NOMBRE_APELLIDOP
 	FROM	HOWE.DBO.VISTA_GAFETES		(NOLOCK)
 	WHERE	EN_NUM_EMP				= @PP_K_EMPLEADO_PEARL
+	AND		EN_NUM_DEPT				= 2
+	--AND		EN_CLASE_EMP			= 4
+	--	SELECT * FROM	HOWE.DBO.VISTA_GAFETES	
+	--	WHERE	EN_NUM_DEPT				= 2
+	--	AND		EN_CLASE_EMP			= 4
 GO
 
 -- //////////////////////////////////////////////////////////////
