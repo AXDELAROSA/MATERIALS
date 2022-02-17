@@ -221,8 +221,8 @@ AS
 				TA_TRADEMARK		VARCHAR(500),
 				TA_MINIMA			INT,
 				TA_MAXIMA			INT,
-				TA_K_UOM			INT
-			)	
+				--TA_K_UOM			INT,
+				TA_CANTIDAD_SQFT	VARCHAR(500)		)	
 			
 	INSERT INTO	@VP_TA_CATALOGO
 	SELECT	TOP(5000)
@@ -236,7 +236,20 @@ AS
 			,TRADEMARK_ITEM
 			,CANTIDAD_MINIMA
 			,CANTIDAD_MAXIMA
-			,K_UNIT_OF_MEASURE
+			--,K_UNIT_OF_MEASURE
+			-- ==================================================================================================================================================================
+			-- ==================================================================================================================================================================
+			,(	CASE
+					WHEN	K_UNIT_OF_MEASURE	= 12	
+							THEN	'0'															--- LIBRAS
+					WHEN	K_UNIT_OF_MEASURE	= 13	
+							THEN	FORMAT(SUM(CANTIDAD_RECIBIDA),'0.00')													--- SQFT
+					WHEN	K_UNIT_OF_MEASURE	IN (20,23)	
+							THEN	FORMAT( ROUND( ( ( (SUM(CANTIDAD_RECIBIDA) / 1.094)  * 1.5 ) * 10.764 ) ,1 ),'0.00')			--- YARDA / LY [ (M2 * 10.764) = SQFT ]
+					ELSE	'-'	
+				END)	AS	CANTIDAD_SQFT
+			-- ==================================================================================================================================================================
+			-- ==================================================================================================================================================================
 	FROM	INVENTARIO			(NOLOCK)  
 	INNER JOIN COMPRAS.DBO.ITEM	(NOLOCK)  ON	INVENTARIO.K_ITEM=ITEM.K_ITEM
 	INNER JOIN BD_GENERAL.dbo.UNIT_OF_MEASURE	(NOLOCK) ON ITEM.K_UNIT_OF_ITEM = UNIT_OF_MEASURE.K_UNIT_OF_MEASURE
@@ -281,15 +294,16 @@ AS
 	-- ==================================================================================================================================================================
 	--	CANTIDAD INDICADA EN SQFT. ES LA QUE SE MANEJA EN LA EMPRESA.
 	-- ==================================================================================================================================================================
-	,(	CASE
-			WHEN	TA_K_UOM	= 12	
-					THEN	'0'															--- LIBRAS
-			WHEN	TA_K_UOM	= 13	
-					THEN	TA_CANTIDAD													--- SQFT
-			WHEN	TA_K_UOM	IN (20,23)	
-					THEN	FORMAT( ROUND( ( ( (TA_CANTIDAD / 1.094)  * 1.5 ) * 10.764 ) ,1 ),'0.00')			--- YARDA / LY [ (M2 * 10.764) = SQFT ]
-			ELSE	'-'	
-		END)	AS	CANTIDAD_SQFT
+	--,(	CASE
+	--		WHEN	TA_K_UOM	= 12	
+	--				THEN	'0'															--- LIBRAS
+	--		WHEN	TA_K_UOM	= 13	
+	--				THEN	FORMAT(SUM(TA_CANTIDAD),'0.00')								--- SQFT
+	--		WHEN	TA_K_UOM	IN (20,23)	
+	--				THEN	FORMAT( ROUND( ( ( (TA_CANTIDAD / 1.094)  * 1.5 ) * 10.764 ) ,1 ),'0.00')			--- YARDA / LY [ (M2 * 10.764) = SQFT ]
+	--		ELSE	'-'	
+	--	END)	AS	CANTIDAD_SQFT
+	,TA_CANTIDAD_SQFT	AS	CANTIDAD_SQFT
 	FROM	@VP_TA_CATALOGO
 -- /////////////////////////////////////////////////////////////////////
 GO
